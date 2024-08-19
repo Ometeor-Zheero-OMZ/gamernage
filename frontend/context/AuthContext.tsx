@@ -1,23 +1,42 @@
-// contexts/authContext.js
-import { createContext, useContext, useState, useEffect } from "react";
+"use client";
 
-const AuthContext = createContext();
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+interface User {
+  name: string;
+  token: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  loading: boolean;
+  login: (name: string, password: string) => Promise<boolean>;
+  logout: () => Promise<boolean>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const login = async (name, password) => {
+  const login = async (name: string, password: string) => {
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          name: name,
-          password: password,
-        }),
+        body: JSON.stringify({ name, password }),
       });
 
       if (!response.ok) {
@@ -26,13 +45,15 @@ export const AuthProvider = ({ children }) => {
         return false;
       }
 
-      const user_data = await response.json();
-      user_data.sub = user_data.name;
-      console.log(user_data);
-      // Store the token in localStorage
-      window.localStorage.setItem("login_token", user_data.token);
-      // Set the user information in your application state
-      setUser(user_data);
+      const userData = await response.json();
+      userData.sub = userData.name;
+      console.log(userData);
+
+      // ローカルストレージにトークンを保存
+      window.localStorage.setItem("login_token", userData.token);
+
+      // ユーザー情報をアプリケーションの状態に設定
+      setUser(userData);
       return true;
     } catch (error) {
       console.error("Login error:", error);
@@ -40,7 +61,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const getCurrentUser = async () => {
+  const getCurrentUser = async (): Promise<User | false> => {
     try {
       const token = window.localStorage.getItem("login_token");
       if (token === "" || token === "undefined") {
@@ -70,7 +91,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        let user = await getCurrentUser();
+        const user = await getCurrentUser();
         if (user) {
           setUser(user);
         } else {

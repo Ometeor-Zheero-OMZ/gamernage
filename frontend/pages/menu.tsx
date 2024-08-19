@@ -1,27 +1,41 @@
+"use client";
+
 import Head from "next/head";
 import axios from "axios";
 import styles from "@/styles/Menu.module.css";
 import { Inter } from "next/font/google";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
-import { useAuth } from "../context/authContext";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../context/AuthContext";
 
 const inter = Inter({ subsets: ["latin"] });
+
+type Menu = {
+  id: number;
+  tableId: number;
+  price: number;
+  cookTimeSeconds: number;
+  name: string;
+  menu: string;
+};
 
 export default function Menu() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const [menus, setMenus] = useState([]);
-  const [tableId, setTableId] = useState(null);
+  const [menus, setMenus] = useState<Menu[]>([]);
+  const [tableId, setTableId] = useState<number | null>(null);
   const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
-    const { tableId } = router.query;
+    const queryParams = new URLSearchParams(window.location.search);
+    const tableIdFromQuery = queryParams.get("tableId"); // Access query parameters
+
     if (!loading && !user) {
       router.push("/login");
     }
-    if (!loading && user && tableId) {
-      setTableId(tableId);
+    if (!loading && user && tableIdFromQuery) {
+      const tableIdNumber = parseInt(tableIdFromQuery, 10);
+      setTableId(tableIdNumber);
       axios
         .get(`/api/menu`, {
           headers: {
@@ -33,24 +47,24 @@ export default function Menu() {
           setMenus(res.data);
         })
         .catch((error) => {
-          alert("Error fetching data: ", error);
+          alert(`Error fetching data: ${error}`);
         });
     }
   }, [user, loading, router]);
 
-  const addOrder = (tableId, menuId, menuName) => {
+  const addOrder = (tableId: number, menuId: number, menuName: string) => {
     setIsSending(true);
     console.log("Menu ID:", menuId);
     axios
       .post(
         `/api/order`,
         {
-          restaurant_table_id: parseInt(tableId),
-          menu_id: parseInt(menuId),
+          restaurant_table_id: tableId,
+          menu_id: menuId,
         },
         {
           headers: {
-            Authorization: `Bearer ${user.token}`,
+            Authorization: `Bearer ${user?.token}`,
             "Content-Type": "application/json",
           },
         }
@@ -61,16 +75,15 @@ export default function Menu() {
         setIsSending(false);
       })
       .catch((error) => {
-        alert("Error fetching data: ", error);
+        alert(`Error fetching data: ${error}`);
         setIsSending(false);
       });
   };
 
-  const toMinutesAndSeconds = (totalSeconds) => {
+  const toMinutesAndSeconds = (totalSeconds: number) => {
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
-
-    return `${minutes} minutes`;
+    return `${minutes} minutes ${seconds} seconds`;
   };
 
   return (
@@ -87,20 +100,19 @@ export default function Menu() {
           {menus.length === 0 ? (
             <div>No Menu found</div>
           ) : (
-            menus.map((menu, index) => (
-              <li className={`${styles.menu}`} key={index}>
+            menus.map((menu) => (
+              <li className={`${styles.menu}`} key={menu.id}>
                 <ul>
                   <li>{menu.name}</li>
                   <li>
-                    expected to take{" "}
-                    {toMinutesAndSeconds(menu.cook_time_seconds)}
+                    Expected to take {toMinutesAndSeconds(menu.cookTimeSeconds)}
                   </li>
                   <li>{menu.price} yen</li>
                   <li>
                     <button
                       className={`${styles.deleteOrderButton}`}
                       type="button"
-                      onClick={() => addOrder(tableId, menu.id, menu.name)}
+                      onClick={() => addOrder(tableId!, menu.id, menu.name)}
                       disabled={isSending}
                     >
                       Add this to order

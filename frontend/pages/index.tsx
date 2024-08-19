@@ -1,37 +1,47 @@
-import Head from 'next/head'
-import axios from 'axios';
-import styles from '@/styles/Home.module.css'
-import { Inter } from 'next/font/google'
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
-import { useAuth } from "../context/authContext";
+"use client";
 
-const inter = Inter({ subsets: ['latin'] })
+import Head from "next/head";
+import axios from "axios";
+import styles from "@/styles/Home.module.css";
+import { Inter } from "next/font/google";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { useAuth } from "../context/AuthContext";
+
+const inter = Inter({ subsets: ["latin"] });
+
+interface Table {
+  id: number;
+  table_number: number;
+}
 
 export default function Home() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const [tables, setTables] = useState([]);
+  const [tables, setTables] = useState<Table[]>([]);
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push('/login');
+      router.push("/login");
     }
     if (!loading && user) {
-      axios.get('/api/table', {
-        headers: {
-          'Authorization': `Bearer ${user.token}`,
-        },
-      }).then(res => {
-        console.log(res.data);
-        setTables(res.data);
-      }).catch(error => {
-        alert("Error fetching data: ", error);
-      })
+      axios
+        .get("/api/table", {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        })
+        .then((res) => {
+          console.log(res.data);
+          setTables(res.data);
+        })
+        .catch((error) => {
+          alert(`Error fetching data: ${error}`);
+        });
     }
   }, [user, loading, router]);
 
-  const goToOrderPage = (tableId) => {
+  const goToOrderPage = (tableId: number) => {
     console.log("Table ID:", tableId);
     router.push(`/order?tableId=${tableId}`);
   };
@@ -47,21 +57,19 @@ export default function Home() {
       <main className={`${styles.main} ${inter.className}`}>
         <ul>
           {tables.map((table, index) => (
-            <li
-              className={`${styles.table}`}
-              key={index}>
+            <li className={`${styles.table}`} key={index}>
               Table {table.table_number}
               <button
                 className={`${styles.showButton}`}
                 type="button"
                 onClick={() => goToOrderPage(table.id)}
               >
-                  orders
+                orders
               </button>
             </li>
           ))}
         </ul>
       </main>
     </>
-  )
+  );
 }

@@ -1,13 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 
-const Countdown = ({ targetTimeString }) => {
-  const [timeRemaining, setTimeRemaining] = useState(null);
+type CountdownProps = {
+  targetTimeString: string;
+};
+
+type TimeRemaining = {
+  minutes: number;
+  seconds: number;
+  finished: boolean;
+};
+
+const Countdown: React.FC<CountdownProps> = ({ targetTimeString }) => {
+  const [timeRemaining, setTimeRemaining] = useState<TimeRemaining | null>(
+    null
+  );
 
   useEffect(() => {
     const intervalId = setInterval(() => {
       const now = new Date();
       const target = new Date(targetTimeString);
-      const remainTime = target - now;
+      const remainTime = target.getTime() - now.getTime();
 
       if (remainTime <= 0) {
         clearInterval(intervalId);

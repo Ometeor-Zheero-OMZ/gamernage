@@ -1,33 +1,50 @@
+"use client";
+
 import Head from "next/head";
 import axios from "axios";
 import styles from "@/styles/Order.module.css";
 import { Inter } from "next/font/google";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { useAuth } from "../context/authContext";
-import Countdown from "../components/countdown";
-import Modal from "../components/modal";
+import { useAuth } from "../context/AuthContext";
+import Countdown from "../components/Countdown";
+import Modal from "../components/Modal";
 
 const inter = Inter({ subsets: ["latin"] });
+
+type Order = {
+  order_id: number;
+  menu_name: string;
+  expected_cook_finish_time: string;
+};
+
+type User = {
+  token: string;
+};
 
 export default function Order() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const [orders, setOrders] = useState([]);
-  const [orderId, setOrder] = useState(null);
-  const [tableId, setTableId] = useState(null);
-  const [isSending, setIsSending] = useState(false);
-  const [isModalOpen, setModalOpen] = useState(false);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [order_id, setOrder] = useState<number | null>(null);
+  const [tableId, setTableId] = useState<number | null>(null);
+  const [isSending, setIsSending] = useState<boolean>(false);
+  const [isModalOpen, setModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    const { tableId } = router.query;
+    const tableIdQuery = router.query.tableId as string | undefined;
+
+    // Loading状態の間は処理をしない
+    if (loading) return;
+
     if (!loading && !user) {
       router.push("/login");
     }
-    if (!loading && user && tableId) {
-      setTableId(tableId);
+    if (!loading && user && tableIdQuery) {
+      const numericTableId = parseInt(tableIdQuery, 10);
+      setTableId(numericTableId);
       axios
-        .get(`/api/table/${tableId}/order`, {
+        .get<Order[]>(`/api/table/${numericTableId}/order`, {
           headers: {
             Authorization: `Bearer ${user.token}`,
           },
@@ -37,13 +54,13 @@ export default function Order() {
           setOrders(res.data);
         })
         .catch((error) => {
-          alert("Error fetching data: ", error);
+          alert(`Error fetching data: ${error}`);
         });
     }
   }, [user, loading, router]);
 
-  const handleOpenModal = (user, orderId) => {
-    setOrder(user, orderId);
+  const handleOpenModal = (order_id: number) => {
+    setOrder(order_id);
     setModalOpen(true);
   };
 
@@ -51,71 +68,72 @@ export default function Order() {
     setModalOpen(false);
   };
 
-  const deleteOrder = (orderId) => {
+  const deleteOrder = (order_id: number) => {
     setIsSending(true);
-    console.log("Order ID:", orderId);
+    console.log("Order ID:", order_id);
     axios
       .delete(`/api/order`, {
         headers: {
-          Authorization: `Bearer ${user.token}`,
+          Authorization: `Bearer ${user?.token}`,
           "Content-Type": "application/json",
         },
         data: {
-          order_id: parseInt(orderId),
+          order_id: order_id,
         },
       })
       .then((res) => {
         console.log(res.data);
         setOrders((prevOrders) =>
-          prevOrders.filter((order) => order.order_id !== orderId)
+          prevOrders.filter((order) => order.order_id !== order_id)
         );
         setIsSending(false);
         alert(`Successfully canceled`);
       })
       .catch((error) => {
         setIsSending(false);
-        alert("Error fetching data: ", error);
+        alert(`Error fetching data: ${error}`);
       });
   };
 
-  const serveOrder = (orderId, menuName) => {
+  const serveOrder = (order: Order, order_id: number, menu_name: string) => {
     setIsSending(true);
-    console.log("Order ID:", orderId);
+    console.log("Order: ", order);
+    console.log("Order ID:", order_id);
     axios
       .delete(`/api/order/complete`, {
         headers: {
-          Authorization: `Bearer ${user.token}`,
+          Authorization: `Bearer ${user?.token}`,
           "Content-Type": "application/json",
         },
         data: {
-          order_id: parseInt(orderId),
+          order_id: order_id,
         },
       })
       .then((res) => {
         console.log(res.data);
         setOrders((prevOrders) =>
-          prevOrders.filter((order) => order.order_id !== orderId)
+          prevOrders.filter((order) => order.order_id !== order_id)
         );
         setIsSending(false);
-        alert(`Successfully served "${menuName}"`);
+        alert(`Successfully served "${menu_name}"`);
       })
       .catch((error) => {
         setIsSending(false);
-        alert("Error fetching data: ", error);
+        alert(`Error fetching data: ${error}`);
       });
   };
 
-  const deleteAllOrders = (tableId) => {
+  const deleteAllOrders = (tableId: number) => {
     setIsSending(true);
     console.log("Table ID:", tableId);
     axios
       .delete(`/api/table/order`, {
         headers: {
-          Authorization: `Bearer ${user.token}`,
+          Authorization: `Bearer ${user?.token}`,
           "Content-Type": "application/json",
         },
         data: {
-          restaurant_table_id: parseInt(tableId),
+          restaurant_table_id: tableId,
         },
       })
       .then((res) => {
@@ -126,29 +144,30 @@ export default function Order() {
       })
       .catch((error) => {
         setIsSending(false);
-        alert("Error fetching data: ", error);
+        alert(`Error fetching data: ${error}`);
       });
   };
 
-  const goToMenuPage = (tableId) => {
+  const goToMenuPage = (tableId: number) => {
     console.log("Table ID:", tableId);
     router.push(`/menu?tableId=${tableId}`);
   };
 
-  const toLocalTime = (utcTimeString) => {
-    // Create a Date object from the UTC time string
-    const date = new Date(ensureUtc(utcTimeString));
+  const toLocalTime = (utcTimeString: string | undefined) => {
+    if (!utcTimeString) {
+      return "不正な値です";
+    }
 
-    // Format the date to a string representing local time
-    const localTimeString = date.toLocaleString();
-    return localTimeString;
+    const date = new Date(ensureUtc(utcTimeString));
+    return date.toLocaleString();
   };
 
-  const ensureUtc = (timeString) => {
-    if (!timeString.endsWith("Z")) {
+  const ensureUtc = (timeString: string) => {
+    // `timeString` が undefined または null でないことを確認
+    if (!timeString) {
       return timeString + "Z";
     }
-    return timeString;
+    return timeString || ""; // `timeString` が `undefined` の場合は空文字を返す
   };
 
   return (
@@ -161,13 +180,19 @@ export default function Order() {
       </Head>
       <main className={`${styles.main} ${inter.className}`}>
         <h2>Table {tableId}</h2>
-        {isModalOpen && <Modal user={user} onClose={handleCloseModal} orderId={orderId} />}
+        {isModalOpen && user && (
+          <Modal
+            user={user}
+            onClose={handleCloseModal}
+            order_id={order_id ?? 0}
+          />
+        )}
         <ul>
           {orders.length === 0 ? (
             <div>No order found</div>
           ) : (
-            orders.map((order, index) => (
-              <li className={`${styles.order}`} key={index}>
+            orders.map((order) => (
+              <li className={`${styles.order}`} key={order.order_id}>
                 <ul>
                   <li>{order.menu_name}</li>
                   <li>
@@ -195,7 +220,7 @@ export default function Order() {
                       type="button"
                       disabled={isSending}
                       onClick={() =>
-                        serveOrder(order.order_id, order.menu_name)
+                        serveOrder(order, order.order_id, order.menu_name)
                       }
                     >
                       Serve
@@ -204,7 +229,8 @@ export default function Order() {
                       className={`${styles.deleteOrderButton}`}
                       type="button"
                       disabled={isSending}
-                      onClick={() => handleOpenModal(order.order_id)}>
+                      onClick={() => handleOpenModal(order.order_id)}
+                    >
                       Detail
                     </button>
                   </li>
@@ -214,13 +240,13 @@ export default function Order() {
           )}
         </ul>
         <div>
-          <button type="button" onClick={() => goToMenuPage(tableId)}>
+          <button type="button" onClick={() => goToMenuPage(tableId ?? 0)}>
             Menu
           </button>
           <button
             type="button"
             className={`${styles.deleteOrderButton}`}
-            onClick={() => deleteAllOrders(tableId)}
+            onClick={() => deleteAllOrders(tableId ?? 0)}
           >
             Delete all orders
           </button>
