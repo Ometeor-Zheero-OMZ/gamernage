@@ -1,17 +1,17 @@
 version: "3.9"
 
 services:
-  mydb:
+  postgres-db:
     build:
       context: .
       dockerfile: ./docker/postgresql/Dockerfile
     environment:
-      POSTGRES_PASSWORD: "postgres"
-      POSTGRES_USER: "postgres"
-      POSTGRES_DB: "secret"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+      POSTGRES_USER: "${DB_USER}"
+      POSTGRES_DB: "${DB_NAME}"
     ports:
-      - 5432:5432
-    container_name: mydb
+      - ${DB_PORT}:${DB_PORT}
+    container_name: postgres-db
     volumes:
       - db-store:/var/lib/postgresql/data
       - ./logs:/var/log/postgresql:z
@@ -23,13 +23,13 @@ services:
     restart: on-failure:5
 
   # Rust
-  myrust:
+  rust-backend:
     build:
       context: .
       dockerfile: ./docker/rust/Dockerfile
     working_dir: /backend
     expose:
-      - "8080"
+      - "${BACKEND_PORT}"
     environment:
       - TZ=UTC
     volumes:
@@ -40,14 +40,14 @@ services:
       - ./backend/Cargo.lock:/backend/Cargo.lock
       - ./backend/Cargo.toml:/backend/Cargo.toml
     command: /backend/target/release/backend
-    container_name: myrust
+    container_name: rust-backend
     networks:
       - app_net
     restart: on-failure:5
 
   # Next.js
-  mynext:
-    container_name: mynext
+  next-frontend:
+    container_name: next-frontend
     build:
       context: .
       dockerfile: ./docker/nextjs/Dockerfile
@@ -55,7 +55,7 @@ services:
     volumes:
       - ./frontend/out:/frontend/out
     ports:
-      - 3000:3000
+      - ${FRONTEND_PORT}:${FRONTEND_PORT}
     networks:
       - app_net
 
@@ -63,11 +63,10 @@ services:
   nginx:
     image: nginx:1.27-alpine
     depends_on:
-      - myrust
+      - rust-backend
     ports:
-      - 80:80
+      - ${NGINX_PORT}:${NGINX_PORT}
     volumes:
-      # What should be served by nginx
       # Rust code
       - ./backend/src:/backend/src
       - ./frontend/out:/frontend/out

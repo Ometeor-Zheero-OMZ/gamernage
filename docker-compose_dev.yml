@@ -6,9 +6,9 @@ services:
       context: .
       dockerfile: ./docker/postgresql/Dockerfile
     environment:
-      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_PASSWORD: "secret"
       POSTGRES_USER: "postgres"
-      POSTGRES_DB: "secret"
+      POSTGRES_DB: "gamernage"
     ports:
       - 5432:5432
     container_name: mydb
