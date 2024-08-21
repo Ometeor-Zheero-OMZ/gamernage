@@ -1,8 +1,5 @@
-pub mod api_handler;
+pub mod handler;
 pub mod middleware;
-mod auth;
+mod controller;
 mod jwt;
-mod order;
-mod restaurant_table;
-mod menu;
 mod service;

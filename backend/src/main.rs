@@ -1,7 +1,7 @@
 use actix_cors::Cors;
 use actix_web::{web::Data, App, HttpServer};
 use api::middleware::jwt_middleware;
-use dotenv::dotenv;
+use dotenvy::dotenv;
 
 mod api;
 mod db;
@@ -37,7 +37,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(jwt_middleware::JwtMiddleware)
             .wrap(cors)
             .app_data(Data::new(pool.clone()))
-            .service(api::api_handler::handlers::api_scope())
+            .service(api::handler::handlers::api_scope())
     })
     .bind("0.0.0.0:8080")?
     .workers(20) // serves more than 10 requests at once

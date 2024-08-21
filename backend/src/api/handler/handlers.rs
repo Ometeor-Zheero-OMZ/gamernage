@@ -2,12 +2,9 @@ use actix_web::{
     web, HttpRequest, HttpResponse,
     Result, Scope
 };
-use super::super::auth;
-use super::super::order;
-use super::super::restaurant_table;
-use super::super::menu;
+use crate::api::controller::{auth, menu, order, restaurant_table};
 
-async fn api_handler(req: HttpRequest) -> Result<HttpResponse> {
+async fn handler(req: HttpRequest) -> Result<HttpResponse> {
     // For 404
     let path = req.path();
     Ok(HttpResponse::NotFound().body(format!("This API: '{}' does not exist.", path)))
@@ -28,10 +25,5 @@ pub fn api_scope() -> Scope {
         .route("/order/complete", web::delete().to(order::complete_order))
         .route("/menu", web::get().to(menu::get_menus))
         .route("/menu/{menu_id}", web::get().to(menu::get_menu))
-        .default_service(web::route().to(api_handler)) // catch-all route for /api
-
-
-    // 2ちゃん or game8 scope
-
-    // todo for game scope
+        .default_service(web::route().to(handler))
 }
