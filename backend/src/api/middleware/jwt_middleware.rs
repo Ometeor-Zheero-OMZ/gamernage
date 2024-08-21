@@ -54,7 +54,7 @@ where
 
             let response = HttpResponse::Unauthorized()
                 .finish()
-                // constructed responses map to "right" body
+                // 左側のボディ型から右側のボディ型に変換
                 .map_into_right_body();
 
             return Box::pin(async { Ok(ServiceResponse::new(request, response)) });
@@ -63,7 +63,7 @@ where
         let res = self.service.call(request);
 
         Box::pin(async move {
-            // forwarded responses map to "left" body
+            // 左側のボディ型にレスポンスをフォワーディング
             res.await.map(ServiceResponse::map_into_left_body)
         })
     }

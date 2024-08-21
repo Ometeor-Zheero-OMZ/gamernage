@@ -47,7 +47,6 @@ pub async fn get_order(
     order_id: web::Path<i32>,
     pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>
 ) -> impl Responder {
-    // Get a connection from the pool
     let conn = pool.get().await.unwrap();
 
     let rows_result = conn.query(
@@ -155,10 +154,8 @@ pub async fn add_order(
         }
     };
 
-    // Get a connection from the pool
     let mut conn = pool.get().await.unwrap();
 
-    // Start a transaction
     let mut transaction = conn.transaction().await.unwrap();
     let rows_result = service::order_service::check_existence_and_insert_order(
         &mut transaction,
@@ -200,10 +197,8 @@ pub async fn add_orders(
         }
     };
 
-    // Get a connection from the pool
     let mut conn = pool.get().await.unwrap();
 
-    // Start a transaction
     let mut transaction = conn.transaction().await.unwrap();
     let rows_result = service::order_service::check_existence_and_insert_orders(
         &mut transaction,
@@ -216,7 +211,6 @@ pub async fn add_orders(
         Ok(result) => {
             match result {
                 Ok(_rows) => {
-                    // Commit the transaction
                     transaction.commit().await.unwrap();
                     return HttpResponse::Ok().finish();
                 }
@@ -238,10 +232,8 @@ pub async fn delete_order(
     order_req: web::Json<DeleteOrderRequest>,
     pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>
 ) -> impl Responder {
-    // Get a connection from the pool
     let mut conn = pool.get().await.unwrap();
 
-    // Start a transaction
     let transaction = conn.transaction().await.unwrap();
 
     let rows_result = transaction.execute(
@@ -259,7 +251,6 @@ pub async fn delete_order(
         ]
     ).await;
 
-    // Commit the transaction
     transaction.commit().await.unwrap();
 
     match rows_result {
@@ -286,10 +277,8 @@ pub async fn complete_order(
         }
     };
 
-    // Get a connection from the pool
     let mut conn = pool.get().await.unwrap();
 
-    // Start a transaction
     let transaction = conn.transaction().await.unwrap();
     let user_row_result = transaction.query_one(
         r#"
@@ -324,7 +313,7 @@ pub async fn complete_order(
             &user_id,
         ]
     ).await;
-    // Commit the transaction
+
     transaction.commit().await.unwrap();
 
     match rows_result {

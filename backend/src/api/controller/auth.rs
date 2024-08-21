@@ -38,13 +38,14 @@ pub async fn login(
     }
     let password: String = rows.get(0).unwrap().get("password");
     let user_id: i32 = rows.get(0).unwrap().get("id");
-    // check if the password is valid
+    
+    // パスワードが有効か判定
     match verify(&req.password, &password) {
         Ok(_) => {
-            // if valid, create jwt token
+            // 有効の場合、トークンを生成
             match jwt::create_token(&req.name) {
                 Ok(token) => {
-                    // Create UserData instance with the necessary user information
+                    // ユーザー情報を作成
                     let user_data = User {
                         id: user_id,
                         name: req.name.clone(),
@@ -66,6 +67,16 @@ pub async fn login(
     }
 }
 
+/// 認証済みのユーザーデータを返却
+/// 
+/// # 引数
+/// 
+/// * `req` - リクエストパラメータ
+/// 
+/// # 戻り値
+/// 
+/// 認証済みのユーザーデータを返却
+/// 認証済みでない場合は、401 を返却
 pub async fn current_user(req: HttpRequest) -> impl Responder {
     match jwt::verify(&req) {
         Ok(user_info) => HttpResponse::Ok().json(user_info),

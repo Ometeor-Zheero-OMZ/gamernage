@@ -22,14 +22,8 @@ pub async fn get_tables(
     _req: HttpRequest,
     pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>
 ) -> impl Responder {
-    // Get a connection from the pool
     let conn = pool.get().await.unwrap();
 
-    // This API fetches all contents from "restaurant_tables" table.
-    // If millions of restaurant table records are there, it might lead to memory depletion
-    // But I believe such case won't happen.. if it does, it is a really big restaurant.
-
-    // Execute a query using the connection from the pool
     let rows_result = conn.query(
         "SELECT id,table_number,note FROM restaurant_tables;",
         &[]
@@ -58,9 +52,8 @@ pub async fn get_table_orders(
     restaurant_table_id: web::Path<i32>,
     pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>
 ) -> impl Responder {
-    // Get a connection from the pool
     let conn = pool.get().await.unwrap();
-    // Execute a query using the connection from the pool
+
     let rows_result = conn.query(
         r#"
         SELECT
@@ -102,9 +95,8 @@ pub async fn get_table_orders(
         "#,
         &[&restaurant_table_id.clone()]
     ).await;
-    // Check the result of select SQL
+
     match rows_result {
-        // Converting the result to vec
         Ok(rows) => {
             if rows.is_empty() {
                 return HttpResponse::Ok().json(Vec::<RestaurantTableOrder>::new());
@@ -158,10 +150,8 @@ pub async fn delete_orders(
     order_req: web::Json<DeleteOrderRequest>,
     pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>
 ) -> impl Responder {
-    // Get a connection from the pool
     let mut conn = pool.get().await.unwrap();
 
-    // Start a transaction
     let transaction = conn.transaction().await.unwrap();
     let rows_result = transaction.execute(
         r#"

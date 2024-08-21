@@ -11,7 +11,6 @@ async fn handler(req: HttpRequest) -> Result<HttpResponse> {
 }
 
 pub fn api_scope() -> Scope {
-    // APIs except "login" and "current_user" are protected by JWT middleware
     web::scope("/api")
         .route("/auth/login", web::post().to(auth::login))
         .route("/auth/current_user", web::get().to(auth::current_user))

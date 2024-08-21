@@ -9,7 +9,7 @@ pub struct Claims {
     pub exp: usize,
 }
 
-// For generics
+/// 基底トレイト
 pub trait RequestHeaders {
     fn get_headers(&self) -> &HeaderMap;
 }
@@ -27,7 +27,11 @@ impl RequestHeaders for ServiceRequest {
 }
 
 pub fn create_token(name: &str) -> Result<String, jsonwebtoken::errors::Error> {
-    let expiration = SystemTime::now() + Duration::from_secs(60 * 60 * 24 * 10); // 10 days
+
+    // 10日
+    let days = 60 * 60 * 24 * 10;
+
+    let expiration = SystemTime::now() + Duration::from_secs(days);
     let claims = Claims {
         sub: name.to_owned(),
         exp: expiration.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as usize,
@@ -41,25 +45,24 @@ pub fn decode_token(token: &str) -> Result<TokenData<Claims>, jsonwebtoken::erro
 
 pub fn verify <R: RequestHeaders>(req: &R)  -> Result<Claims, String>
 {
-    // Extract the token from the Authorization header
+    // リクエストヘッダーから Bearer トークンを抽出できる場合
     if let Some(auth_header) = req.get_headers().get("Authorization") {
         if let Ok(auth_str) = auth_header.to_str() {
-            // The token is typically prefixed by "Bearer" in the Authorization header
+            // 接頭辞の "Bearer" を抽出
             let parts: Vec<&str> = auth_str.split_whitespace().collect();
             if parts.len() == 2 && parts[0] == "Bearer" {
                 let token = parts[1];
-                // Verify the token and decode the user information
+                // トークンを認証し、ユーザー情報をデコード
                 match self::decode_token(token) {
                     Ok(user_info) => {
                         return Ok(user_info.claims);
                     },
                     Err(err) => {
-                        // Token is invalid
                         return Err(err.to_string());
                     }
                 }
             }
         }
     }
-    return Err("Header Authorization is not found".to_owned());
+    return Err("リクエストヘッダーに認証トークンが見つかりませんでした。".to_owned());
 }
