@@ -2,7 +2,7 @@ use actix_web::{
     web, HttpRequest, HttpResponse,
     Result, Scope
 };
-use crate::api::controller::{auth, menu, order, restaurant_table};
+use crate::api::controller::{auth, menu, order, restaurant_table, todo};
 
 async fn handler(req: HttpRequest) -> Result<HttpResponse> {
     // For 404
@@ -24,5 +24,16 @@ pub fn api_scope() -> Scope {
         .route("/order/complete", web::delete().to(order::complete_order))
         .route("/menu", web::get().to(menu::get_menus))
         .route("/menu/{menu_id}", web::get().to(menu::get_menu))
+        // TODO一覧取得
+        .route("/todos", web::get().to(todo::get_todos))
+        // TODO作成
+        .route("/todo", web::post().to(todo::create_todo))
+        // TODO更新
+        .route("/todo", web::post().to(todo::update_todo))
+        // TODO削除
+        .route("/todo", web::delete().to(todo::delete_todo))
+        // TODO完了
+        .route("/todo/complete", web::post().to(todo::complete_todo))
+                
         .default_service(web::route().to(handler))
 }
