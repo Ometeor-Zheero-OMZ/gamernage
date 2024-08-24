@@ -306,6 +306,7 @@ dependencies = [
  "serde_json",
  "tokio 1.32.0",
  "tokio-postgres",
+ "uuid",
 ]
 
 [[package]]
@@ -1440,6 +1441,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8d2234cdee9408b523530a9b6d2d6b373d1db34f6a8e51dc03ded1828d7fb67c"
 dependencies = [
  "bytes 1.5.0",
+ "chrono",
  "fallible-iterator",
  "postgres-protocol",
 ]
@@ -2078,6 +2080,15 @@ dependencies = [
  "form_urlencoded",
  "idna",
  "percent-encoding",
+]
+
+[[package]]
+name = "uuid"
+version = "1.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "81dfa00651efa65069b0b6b651f4aaa31ba9e3c3ce0137aaad053604ee7e0314"
+dependencies = [
+ "getrandom",
 ]
 
 [[package]]
