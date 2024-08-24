@@ -33,12 +33,14 @@ pub async fn login(
         "SELECT id,name,password FROM users WHERE name = $1;",
         &[&req.name]
     ).await.unwrap();
+
     if rows.is_empty() {
         return HttpResponse::Unauthorized().finish();
     }
+
     let password: String = rows.get(0).unwrap().get("password");
-    let user_id: i32 = rows.get(0).unwrap().get("id");
-    
+    let id: i32 = rows.get(0).unwrap().get("id");
+
     // パスワードが有効か判定
     match verify(&req.password, &password) {
         Ok(_) => {
@@ -47,9 +49,9 @@ pub async fn login(
                 Ok(token) => {
                     // ユーザー情報を作成
                     let user_data = User {
-                        id: user_id,
+                        id,
                         name: req.name.clone(),
-                        token: token,
+                        token,
                     };
 
                     HttpResponse::Ok().json(user_data)
