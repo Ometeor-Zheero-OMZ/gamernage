@@ -15,3 +15,20 @@ body {
   /* If you're toggling dark mode manually, you can use the .dark class */
   @apply bg-gray-900 text-gray-100;
 }
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.Gamission {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 50px;
+  margin-top: 10px;
+}
