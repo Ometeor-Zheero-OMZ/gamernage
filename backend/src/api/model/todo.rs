@@ -1,5 +1,5 @@
 // use uuid::Uuid;
-// use chrono::{DateTime, Utc};
+// use chrono::{NaiveDateTime};
 // use serde::{Deserialize, Serialize};
 
 // #[derive(Debug, Clone)]
@@ -8,7 +8,7 @@
 //     pub title: String,
 //     pub description: String,
 //     pub is_completed: bool,
-//     pub created_at: DateTime<Utc>,
+//     pub created_at: NaiveDateTime,
 // }
 
 // #[derive(Serialize, Deserialize, Debug)]
@@ -23,7 +23,7 @@
 //     pub title: Option<String>,
 //     pub description: Option<String>,
 //     pub is_completed: Option<bool>,
-//     pub update_at: DateTime<Utc>,
+//     pub update_at: NaiveDateTime,
 // }
 
 // #[derive(Serialize, Deserialize, Debug)]

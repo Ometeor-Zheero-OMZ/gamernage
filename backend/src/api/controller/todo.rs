@@ -2,7 +2,8 @@ use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use bb8_postgres::{bb8::Pool, PostgresConnectionManager};
 use postgres::NoTls;
 use reqwest::StatusCode;
-use chrono::{DateTime, Utc};
+use chrono::NaiveDateTime;
+use std::time::SystemTime;
 use serde::{Deserialize, Serialize};
 
 use crate::{api::jwt::jwt, library::logger};
@@ -11,18 +12,18 @@ use crate::{api::jwt::jwt, library::logger};
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TodoItem {
     pub id: i32,
-    pub user_id: i32,
-    pub game_id: i32,
+    pub user_id: Option<i32>,
+    pub game_id: Option<i32>,
     pub title: String,
     pub description: String,
     pub is_completed: bool,
-    pub status: i32,
-    pub priority: i32,
-    pub difficulty: i32,
-    pub deadline: DateTime<Utc>,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
-    pub deleted_at: DateTime<Utc>,
+    pub status: Option<i32>,
+    pub priority: Option<i32>,
+    pub difficulty: Option<i32>,
+    pub deadline: Option<NaiveDateTime>,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
+    pub deleted_at: Option<NaiveDateTime>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -30,16 +31,22 @@ pub struct GetTodoItem {
     pub user_id: i32
 }
 
-#[derive(Serialize)]
-pub struct TodoListResponse {
+#[derive(Serialize, Debug)]
+pub struct ResponseTodoList {
     todos: Vec<TodoItem>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CreateTodoItem {
+#[derive(Serialize, Debug)]
+pub struct ResponseCreateTodoItem {
     pub title: String,
     pub description: String,
     pub is_completed: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct RequestCreateTodoItem {
+    pub title: String,
+    pub description: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -48,7 +55,7 @@ pub struct UpdateTodoItem {
     pub title: Option<String>,
     pub description: Option<String>,
     pub is_completed: Option<bool>,
-    pub updated_at: DateTime<Utc>,
+    pub updated_at: NaiveDateTime,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -63,10 +70,9 @@ pub struct CompleteTodoItem {
 
 pub async fn get_todos(
     req: HttpRequest,
-    todo_req: web::Json<GetTodoItem>,
     pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>
 ) -> impl Responder {
-    let _user = match jwt::verify(&req) {
+    let user = match jwt::verify(&req) {
         Ok(user_info) => user_info,
         Err(err) => {
             logger::log(logger::Header::ERROR, &err.to_string());
@@ -93,41 +99,89 @@ pub async fn get_todos(
     let rows_result = transaction.query(
         r#"
         SELECT
-            id, title, description, is_completed, created_at, updated_at
+            *
         FROM
             todos
         WHERE
-            user_id = 1
+            user_id = $1
         "#,
-        &[&todo_req.user_id]
+        &[&user.id]
     ).await;
 
     match rows_result {
         Ok(rows) => {
-            let todos: Vec<TodoItem> = rows.into_iter().map(|row| TodoItem {
-                id: row.get("id"),
-                user_id: row.get("user_id"),
-                game_id: row.get("game_id"),
-                title: row.get("title"),
-                description: row.get("description"),
-                is_completed: row.get("is_completed"),
-                status: row.get("status"),
-                priority: row.get("priority"),
-                difficulty: row.get("difficulty"),
-                deadline: row.get("deadline"),
-                created_at: row.get("created_at"),
-                updated_at: row.get("updated_at"),
-                deleted_at: row.get("deleted_at"),
+            let todos: Vec<TodoItem> = rows.into_iter().map(|row| {       
+                let id: i32 = row.get("id");
+                let user_id: Option<i32> = row.get("user_id");
+                let game_id: Option<i32> = row.get("game_id");
+                let title: String = row.get("title");
+                let description: String = row.get("description");
+                let is_completed: bool = row.get("is_completed");
+                let status: Option<i32> = row.get("status");
+                let priority: Option<i32> =  row.get("priority");
+                let difficulty: Option<i32> =  row.get("difficulty");
+                let deadline: Option<NaiveDateTime> = row.get::<_, Option<SystemTime>>("deadline")
+                    .and_then(|time| {
+                        NaiveDateTime::from_timestamp_opt(
+                            time.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as i64,
+                            0,
+                        )
+                    });
+                let created_at: NaiveDateTime = row.get::<_, Option<SystemTime>>("created_at")
+                    .and_then(|time| {
+                        NaiveDateTime::from_timestamp_opt(
+                            time.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as i64,
+                            0,
+                        )
+                    })
+                    .expect("created_at は NOT NULL です。");
+                let updated_at: NaiveDateTime = row.get::<_, Option<SystemTime>>("updated_at")
+                    .and_then(|time| {
+                        NaiveDateTime::from_timestamp_opt(
+                            time.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as i64,
+                            0,
+                        )
+                    })
+                    .expect("updated_at は NOT NULL です。");
+                let deleted_at: Option<NaiveDateTime> = row.get::<_, Option<SystemTime>>("deleted_at")
+                    .and_then(|time| {
+                        NaiveDateTime::from_timestamp_opt(
+                            time.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as i64,
+                            0,
+                        )
+                    });
+
+                TodoItem {
+                    id,
+                    user_id,
+                    game_id,
+                    title,
+                    description,
+                    is_completed,
+                    status,
+                    priority,
+                    difficulty,
+                    deadline,
+                    created_at,
+                    updated_at,
+                    deleted_at,
+                }
             }).collect();
 
-            transaction.commit().await.unwrap();
-            
-            HttpResponse::Ok().json(TodoListResponse { todos })
+            if let Err(e) = transaction.commit().await {
+                logger::log(logger::Header::ERROR, &format!("トランザクションをコミット中にエラーが発生しました： {}", e.to_string()));
+                return HttpResponse::InternalServerError().finish();
+            }
+
+            return HttpResponse::Ok().json(ResponseTodoList { todos });
         }
         Err(err) => {
-            transaction.rollback().await.unwrap();
+            // transaction.rollback().await.unwrap();
+            if let Err(e) = transaction.rollback().await {
+                logger::log(logger::Header::ERROR, &format!("トランザクションをロールバック中にエラーが発生しました： {}", e.to_string()));
+            }
             logger::log(logger::Header::ERROR, &err.to_string());
-            HttpResponse::InternalServerError().finish()
+            return HttpResponse::InternalServerError().finish();
         }
     }
 }
@@ -135,10 +189,10 @@ pub async fn get_todos(
 /// TODO作成
 pub async fn create_todo(
     req: HttpRequest,
-    todo_req: web::Json<CreateTodoItem>,
+    todo_req: web::Json<RequestCreateTodoItem>,
     pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>
 ) -> impl Responder {
-    let _user = match jwt::verify(&req) {
+    let user = match jwt::verify(&req) {
         Ok(user_info) => user_info,
         Err(err) => {
             logger::log(logger::Header::ERROR, &err.to_string());
@@ -162,33 +216,38 @@ pub async fn create_todo(
         }
     };
     
-    let not_completed = false;
-    
-    let rows_result = transaction.execute(
+    let new_todo = match transaction.query_one(
         r#"
-        INSERT INTO todos (title, description, is_completed, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO todos (user_id, title, description, is_completed)
+        VALUES ($1, $2, $3, false)
+        RETURNING *
         "#,
         &[
+            &user.id,
             &todo_req.title,
             &todo_req.description,
-            &not_completed,
-            &Utc::now(),
-            &Utc::now(),
         ]
-    ).await;
-
-    match rows_result {
-        Ok(_rows) => {
-            transaction.commit().await.unwrap();
-            return HttpResponse::Ok().finish();
-        }
+    )
+    .await {
+        Ok(row) => ResponseCreateTodoItem {
+            title: row.get("title"),
+            description: row.get("description"),
+            is_completed: row.get("is_completed")
+        },
         Err(err) => {
             transaction.rollback().await.unwrap();
             logger::log(logger::Header::ERROR, &err.to_string());
+
             return HttpResponse::InternalServerError().finish();
         }
     };
+
+    if let Err(e) = transaction.commit().await {
+        logger::log(logger::Header::ERROR, &format!("トランザクションをコミット中にエラーが発生しました： {}", e.to_string()));
+        return HttpResponse::InternalServerError().finish();
+    }
+
+    return HttpResponse::Ok().json(new_todo);
 }
 
 /// TODO更新
@@ -221,7 +280,7 @@ pub async fn update_todo(
             title = $2,
             description = $3,
             is_completed = $4,
-            updated_at = $5
+            updated_at = CURRENT_TIMESTAMP
         WHERE id = $1
         "#,
         &[
@@ -229,7 +288,6 @@ pub async fn update_todo(
             &todo_req.title,
             &todo_req.description,
             &todo_req.is_completed,
-            &Utc::now(),
         ]
     ).await;
 
