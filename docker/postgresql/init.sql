@@ -156,3 +156,7 @@ CREATE TABLE todos (
 CREATE INDEX index_todo_status ON todos (status);
 CREATE INDEX index_todo_priority ON todos (priority);
 CREATE INDEX index_todo_difficulty ON todos (difficulty);
+
+INSERT INTO todos ("user_id", "title", "description", "is_completed", "status", "priority", "difficulty", "created_at", "updated_at") VALUES
+	 (1, 'コーディングテスト', 'Leetcodeでアルゴリズムの勉強', false, 1, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+	 (1, 'ランニング', '30分くらい公園でランニング', false, 1, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
