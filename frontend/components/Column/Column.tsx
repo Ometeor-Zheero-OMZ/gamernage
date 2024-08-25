@@ -1,4 +1,3 @@
-import "../../styles/Column.module.css";
 import React from "react";
 import {
   SortableContext,
@@ -7,26 +6,12 @@ import {
 import { ColumnProps, TaskParam } from "../../constants/type";
 import Task from "../Task/Task";
 
-const Column: React.FC<ColumnProps> = ({
-  tasks,
-  onUpdateTask,
-  onDeleteTask,
-  onCompleteTask,
-}) => {
+const Column: React.FC<ColumnProps> = ({ tasks }) => {
   return (
-    <div className="column">
-      <SortableContext
-        items={tasks.map((task) => task.id)}
-        strategy={verticalListSortingStrategy}
-      >
-        {tasks.map((task: TaskParam) => (
-          <Task
-            key={task.id}
-            task={task}
-            onUpdateTask={onUpdateTask}
-            onDeleteTask={onDeleteTask}
-            onCompleteTask={onCompleteTask}
-          />
+    <div className="bg-[#f2f2f3] rounded-md p-4 w-4/5 max-w-md flex flex-col gap-4">
+      <SortableContext items={tasks} strategy={verticalListSortingStrategy}>
+        {tasks.map((task) => (
+          <Task key={task.id} task={task} />
         ))}
       </SortableContext>
     </div>

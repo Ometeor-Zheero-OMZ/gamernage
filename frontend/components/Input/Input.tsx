@@ -1,4 +1,3 @@
-import "../../styles/Input.module.css";
 import { InputProps } from "../../constants/type";
 import React, { useState } from "react";
 
@@ -9,7 +8,6 @@ const Input: React.FC<InputProps> = ({ onSubmit }) => {
   const handleSubmit = () => {
     if (!title || !description) return;
 
-    console.log("送信するパラメータ: ", title, description);
     onSubmit(title, description);
 
     setTitle("");
@@ -17,24 +15,27 @@ const Input: React.FC<InputProps> = ({ onSubmit }) => {
   };
 
   return (
-    <div className="flex flex-col justify-center items-center bg-gray-500 border border-5">
+    <div className="flex justify-center items-center gap-2.5">
       <div className="flex space-x-2">
         <input
           type="text"
-          className="text-blue-400"
-          placeholder="今日のミッションは何ですか？"
+          className="border-2 border-gray-300 rounded-xl p-2.5 mr-5"
+          placeholder="ミッション名"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
         <input
           type="text"
-          className="text-blue-400"
-          placeholder="ミッションの詳細を書きましょう！"
+          className="border-2 border-gray-300 rounded-xl p-2.5"
+          placeholder="ミッション詳細"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
       </div>
-      <button className="mt-2" onClick={handleSubmit}>
+      <button
+        className="mt-2 border-none rounded-xl p-2.5 bg-blue-600 text-white"
+        onClick={handleSubmit}
+      >
         ミッションを追加
       </button>
     </div>
