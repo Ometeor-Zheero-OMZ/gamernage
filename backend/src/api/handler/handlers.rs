@@ -33,7 +33,7 @@ pub fn api_scope() -> Scope {
         // TODO削除
         .route("/todo", web::delete().to(todo::delete_todo))
         // TODO完了
-        .route("/todo/complete", web::post().to(todo::complete_todo))
+        .route("/todo/change-status", web::post().to(todo::complete_todo))
                 
         .default_service(web::route().to(handler))
 }
