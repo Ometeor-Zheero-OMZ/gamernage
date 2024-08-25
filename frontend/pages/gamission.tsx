@@ -31,14 +31,20 @@ const Gamission = () => {
   useEffect(() => {
     // TODO一覧取得
     const fetchTasks = async () => {
-      console.log("Called fetchTasks");
       if (!loading && !user) {
         router.push("/login");
-      } else if (!loading && user) {
+        return;
+      }
+
+      if (!loading && user) {
+        setIsLoading(true); // Fetchingが始まったのでローディング状態を開始する
+
         try {
-          const response = await axios.get("/todos", {
+          const response = await axios.get("/api/todos", {
             headers: { Authorization: `Bearer ${user.token}` },
           });
+
+          console.log(`response.data.todos: ${response.data.todos}`);
 
           if (response.data.todos && Array.isArray(response.data.todos)) {
             setTasks(response.data.todos);
@@ -46,9 +52,9 @@ const Gamission = () => {
             setError("データ形式が正しくありません。");
           }
         } catch (err) {
-          setError("タスクの取得に失敗しました。");
+          setError("ミッションの取得に失敗しました。");
         } finally {
-          setIsLoading(false);
+          setIsLoading(false); // Fetchingが終了したのでローディング状態を終了する
         }
       }
     };
@@ -60,11 +66,27 @@ const Gamission = () => {
   const addTask = async (title: string, description: string) => {
     console.log("Called addTask");
 
-    try {
-      const response = await axios.post("/todo", { title, description });
-      setTasks((tasks) => [...tasks, response.data]);
-    } catch (err) {
-      setError("タスクの追加に失敗しました。");
+    if (!loading && !user) {
+      router.push("/login");
+      return;
+    }
+
+    const reqBody = { title, description };
+    if (user) {
+      try {
+        const response = await axios.post("/api/todo", reqBody, {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        console.log(`response: ${JSON.stringify(response)}`);
+
+        setTasks((tasks) => [...tasks, response.data]);
+      } catch (err) {
+        setError("ミッションの追加に失敗しました。");
+      }
     }
   };
 
@@ -72,13 +94,26 @@ const Gamission = () => {
   const updateTask = async (updatedTask: TaskParam) => {
     console.log("Called updateTask");
 
-    try {
-      await axios.post("/todo", updatedTask);
-      setTasks((tasks) =>
-        tasks.map((task) => (task.id === updatedTask.id ? updatedTask : task))
-      );
-    } catch (err) {
-      setError("タスクの更新に失敗しました。");
+    if (!loading && !user) {
+      router.push("/login");
+      return;
+    }
+
+    if (user) {
+      try {
+        await axios.post("/api/todo", {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+            "Content-Type": "application/json",
+          },
+          updatedTask,
+        });
+        setTasks((tasks) =>
+          tasks.map((task) => (task.id === updatedTask.id ? updatedTask : task))
+        );
+      } catch (err) {
+        setError("ミッションの更新に失敗しました。");
+      }
     }
   };
 
@@ -86,27 +121,53 @@ const Gamission = () => {
   const deleteTask = async (taskId: number) => {
     console.log("Called deleteTask");
 
-    try {
-      await axios.delete("/todo", { data: { id: taskId } });
-      setTasks((tasks) => tasks.filter((task) => task.id !== taskId));
-    } catch (err) {
-      setError("タスクの削除に失敗しました。");
+    if (!loading && !user) {
+      router.push("/login");
+      return;
+    }
+
+    if (user) {
+      try {
+        await axios.delete("/api/todo", {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+            "Content-Type": "application/json",
+          },
+          data: { id: taskId },
+        });
+        setTasks((tasks) => tasks.filter((task) => task.id !== taskId));
+      } catch (err) {
+        setError("ミッションの削除に失敗しました。");
+      }
     }
   };
 
-  // TODO完了
-  const completeTask = async (taskId: number) => {
-    console.log("Called completeTask");
+  // TODOステータス更新
+  const changeTaskStatus = async (taskId: number) => {
+    console.log("Called changeTaskStatus");
 
-    try {
-      await axios.post("/todo/complete", { id: taskId });
-      setTasks((tasks) =>
-        tasks.map((task) =>
-          task.id === taskId ? { ...task, is_completed: true } : task
-        )
-      );
-    } catch (err) {
-      setError("タスクの完了に失敗しました。");
+    if (!loading && !user) {
+      router.push("/login");
+      return;
+    }
+
+    if (user) {
+      try {
+        await axios.post("/api/todo/complete", {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+            "Content-Type": "application/json",
+          },
+          id: taskId,
+        });
+        setTasks((tasks) =>
+          tasks.map((task) =>
+            task.id === taskId ? { ...task, is_completed: true } : task
+          )
+        );
+      } catch (err) {
+        setError("ミッションの完了に失敗しました。");
+      }
     }
   };
 
@@ -129,33 +190,21 @@ const Gamission = () => {
   };
 
   // 現段階でUXの良さが感じられなかったため、下記引数を除外
-  // タスクを選択し、キーボードのEnterを入力すると、カーソルボタンで↑↓で操作できる
+  // ミッションを選択し、キーボードのEnterを入力すると、カーソルボタンで↑↓で操作できる
   // useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   const sensors = useSensors(useSensor(PointerSensor), useSensor(TouchSensor));
 
   return (
-    <div className="Gamission">
+    <div className="w-full h-full flex flex-col items-center gap-12 mt-2.5">
       <h1>今日のミッション</h1>
-      <div className="flex justify-center">
-        {error && <p>Error: {error}</p>}
-      </div>
-      {isLoading ? (
-        <p>Loading...</p>
-      ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCorners}
-          onDragEnd={handleDragEnd}
-        >
-          <Input onSubmit={addTask} />
-          <Column
-            tasks={tasks}
-            onUpdateTask={updateTask}
-            onDeleteTask={deleteTask}
-            onCompleteTask={completeTask}
-          />
-        </DndContext>
-      )}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragEnd={handleDragEnd}
+      >
+        <Input onSubmit={addTask} />
+        <Column tasks={tasks} />
+      </DndContext>
     </div>
   );
 };
