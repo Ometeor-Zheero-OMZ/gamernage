@@ -16,14 +16,8 @@ pub async fn get_menus(
     _req: HttpRequest,
     pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>
 ) -> impl Responder {
-    // Get a connection from the pool
     let conn = pool.get().await.unwrap();
 
-    // This API fetches all contents from "menus" table.
-    // If millions of restaurant menu records are there, it might lead to memory depletion
-    // But I believe having millions of menu items won't happen..
-
-    // Execute a query using the connection from the pool
     let rows_result = conn.query(
         "SELECT id,name,cook_time_seconds,price FROM menus;",
         &[]
@@ -55,10 +49,8 @@ pub async fn get_menu(
     menu_id: web::Path<i32>,
     pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>
 ) -> impl Responder {
-    // Get a connection from the pool
     let conn = pool.get().await.unwrap();
 
-    // Execute a query using the connection from the pool
     let rows_result = conn.query(
         "SELECT id,name,cook_time_seconds,price FROM menus WHERE id = $1;",
         &[&menu_id.into_inner()]

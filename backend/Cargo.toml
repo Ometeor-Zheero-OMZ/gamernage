@@ -15,8 +15,10 @@ futures = "0.3"
 bb8 = "0.5"
 bb8-postgres = "0.7"
 tokio = { version = "1", features = ["full"] }
-postgres = "0.19"
-tokio-postgres = "0.7"
+# postgres = "0.19"
+# tokio-postgres = "0.7"
+postgres = { version = "0.19", features = ["with-chrono-0_4"] }
+tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
 # auth
 jsonwebtoken = "7"
 bcrypt = "0.10"
@@ -31,3 +33,4 @@ reqwest = { version = "0.11", features = ["json"] }
 colored= "2"
 rand = "0.8"
 lazy_static = "1.4"
+uuid = { version = "1.10.0", features = ["v4", "v7"] }

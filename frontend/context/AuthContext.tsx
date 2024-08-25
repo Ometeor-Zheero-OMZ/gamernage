@@ -8,18 +8,19 @@ import React, {
   ReactNode,
 } from "react";
 
-interface User {
+type User = {
+  id: number;
   name: string;
   token: string;
-}
+};
 
-interface AuthContextType {
+type AuthContextType = {
   user: User | null;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   loading: boolean;
   login: (name: string, password: string) => Promise<boolean>;
   logout: () => Promise<boolean>;
-}
+};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -47,6 +48,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
       const userData = await response.json();
       userData.sub = userData.name;
+      userData.id = userData.id;
       console.log(userData);
 
       // ローカルストレージにトークンを保存

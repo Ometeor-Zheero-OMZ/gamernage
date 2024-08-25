@@ -11,21 +11,25 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { login } = useAuth();
+
   const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
     setName(e.target.value);
   };
+
   const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
     setPassword(e.target.value);
   };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoggingIn(true);
     let isSuccess = await login(name, password);
     setIsLoggingIn(false);
+
     if (isSuccess) {
-      router.push("/");
+      router.push("/gamission");
     } else {
-      alert("Login failed.");
+      alert("ログインに失敗しました。");
     }
   };
 
@@ -40,7 +44,7 @@ const LoginPage = () => {
             id="name"
             type="text"
             className={`${styles.formInput}`}
-            placeholder="Enter Username"
+            placeholder="ユーザー名を入力しましょう！"
             name="name"
             onChange={handleNameChange}
             required
@@ -52,7 +56,7 @@ const LoginPage = () => {
             id="password"
             type="password"
             className={`${styles.formInput}`}
-            placeholder="Enter Password"
+            placeholder="パスワードを入力しましょう！"
             name="password"
             onChange={handlePasswordChange}
             disabled={isLoggingIn}

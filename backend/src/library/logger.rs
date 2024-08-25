@@ -4,14 +4,14 @@ use std::io::Write;
 use std::path::Path;
 use lazy_static::lazy_static;
 
-// Path to log file
+// ログファイルのパス
 use crate::PROJECT_PATH;
 
 lazy_static! {
     pub static ref LOG_PATH: String = format!("{}/log/actix.log", PROJECT_PATH);
 }
 
-/// List of different types of log headers.
+/// ログヘッダーの列挙子
 #[allow(dead_code)]
 pub enum Header {
     SUCCESS,
@@ -20,9 +20,9 @@ pub enum Header {
     ERROR
 }
 
-/// Logs a message to the console.
+/// ログを出力
 pub fn log(header: Header, message: &str) {
-    // Type of message to log
+    // ログヘッダーを判定
     let header = match header {
         Header::SUCCESS => "SUCCESS",
         Header::INFO => "INFO",
@@ -30,10 +30,10 @@ pub fn log(header: Header, message: &str) {
         Header::ERROR => "ERROR"
     };
 
-    // Print the log to the console
+    // ログをコンソール上に出力
     println!("[{}] {} {}", Local::now().format("%m-%d-%Y %H:%M:%S").to_string(), header, message);
 
-    // Write the log to a file
+    // ログをファイルに書き出し
     if Path::new(&*LOG_PATH).exists() {
         let mut log_file = OpenOptions::new().append(true).open(&*LOG_PATH).unwrap();
         writeln!(log_file, "[{}] {} {}", Local::now().format("%m-%d-%Y %H:%M:%S").to_string(), header, message).unwrap();
