@@ -5,6 +5,7 @@ use std::time::{SystemTime, Duration};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Claims {
+    pub id: i32,
     pub sub: String,
     pub exp: usize,
 }
@@ -26,13 +27,14 @@ impl RequestHeaders for ServiceRequest {
     }
 }
 
-pub fn create_token(name: &str) -> Result<String, jsonwebtoken::errors::Error> {
+pub fn create_token(name: &str, id: i32) -> Result<String, jsonwebtoken::errors::Error> {
 
     // 10日
     let days = 60 * 60 * 24 * 10;
 
     let expiration = SystemTime::now() + Duration::from_secs(days);
     let claims = Claims {
+        id,
         sub: name.to_owned(),
         exp: expiration.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as usize,
     };
