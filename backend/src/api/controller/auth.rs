@@ -45,7 +45,7 @@ pub async fn login(
     match verify(&req.password, &password) {
         Ok(_) => {
             // 有効の場合、トークンを生成
-            match jwt::create_token(&req.name) {
+            match jwt::create_token(&req.name, id) {
                 Ok(token) => {
                     // ユーザー情報を作成
                     let user_data = User {
