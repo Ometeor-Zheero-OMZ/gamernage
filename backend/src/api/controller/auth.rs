@@ -33,22 +33,25 @@ pub async fn login(
         "SELECT id,name,password FROM users WHERE name = $1;",
         &[&req.name]
     ).await.unwrap();
+
     if rows.is_empty() {
         return HttpResponse::Unauthorized().finish();
     }
+
     let password: String = rows.get(0).unwrap().get("password");
-    let user_id: i32 = rows.get(0).unwrap().get("id");
-    // check if the password is valid
+    let id: i32 = rows.get(0).unwrap().get("id");
+
+    // パスワードが有効か判定
     match verify(&req.password, &password) {
         Ok(_) => {
-            // if valid, create jwt token
-            match jwt::create_token(&req.name) {
+            // 有効の場合、トークンを生成
+            match jwt::create_token(&req.name, id) {
                 Ok(token) => {
-                    // Create UserData instance with the necessary user information
+                    // ユーザー情報を作成
                     let user_data = User {
-                        id: user_id,
+                        id,
                         name: req.name.clone(),
-                        token: token,
+                        token,
                     };
 
                     HttpResponse::Ok().json(user_data)
@@ -66,6 +69,16 @@ pub async fn login(
     }
 }
 
+/// 認証済みのユーザーデータを返却
+/// 
+/// # 引数
+/// 
+/// * `req` - リクエストパラメータ
+/// 
+/// # 戻り値
+/// 
+/// 認証済みのユーザーデータを返却
+/// 認証済みでない場合は、401 を返却
 pub async fn current_user(req: HttpRequest) -> impl Responder {
     match jwt::verify(&req) {
         Ok(user_info) => HttpResponse::Ok().json(user_info),

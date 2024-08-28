@@ -17,8 +17,6 @@ pub async fn check_existence_and_insert_order(
     user_name: String,
 ) -> Result<Result<u64, Error>, HttpResponseBuilder>
 {
-    // Execute a query using the connection from the pool
-    // Before inserting, we will validate each id.
     let menu_row_result = transaction.query_one(
         r#"
         SELECT
@@ -31,6 +29,7 @@ pub async fn check_existence_and_insert_order(
         "#,
         &[&menu_id]
     ).await;
+
     let menu_seconds = match menu_row_result {
         Ok(menu_row) => {
             let seconds: i32 = menu_row.get("cook_time_seconds");
@@ -41,6 +40,7 @@ pub async fn check_existence_and_insert_order(
             return Err(HttpResponse::BadRequest());
         }
     };
+
     let users_rows_result = transaction.query_one(
         r#"
         SELECT
@@ -53,6 +53,7 @@ pub async fn check_existence_and_insert_order(
         "#,
         &[&user_name]
     ).await;
+
     let user_id: i32 = match users_rows_result {
         Ok(users_row) => {
             users_row.get("id")
@@ -62,6 +63,7 @@ pub async fn check_existence_and_insert_order(
             return Err(HttpResponse::BadRequest());
         }
     };
+
     let tables_row_result = transaction.query_one(
         r#"
         SELECT
@@ -74,6 +76,7 @@ pub async fn check_existence_and_insert_order(
         "#,
         &[&restaurant_table_id]
     ).await;
+
     match tables_row_result {
         Ok(_tables_row) => {}
         Err(err) => {
@@ -81,7 +84,7 @@ pub async fn check_existence_and_insert_order(
             return Err(HttpResponse::BadRequest());
         }
     };
-    // each id should be ok. inserting.
+
     let current_datetime_utc = Utc::now();
 
     let expected_cook_finish_time = current_datetime_utc + Duration::seconds(menu_seconds as i64);
@@ -113,8 +116,6 @@ pub async fn check_existence_and_insert_orders(
     user_name: String,
 ) -> Result<Result<u64, Error>, HttpResponseBuilder>
 {
-    // Execute a query using the connection from the pool
-    // Before inserting, we will validate each id.
     let menu_rows_result = transaction.query(
         r#"
         SELECT
@@ -127,9 +128,9 @@ pub async fn check_existence_and_insert_orders(
         "#,
         &[menu_ids]
     ).await;
+
     let menu_seconds = match menu_rows_result {
         Ok(menu_rows) => {
-            // Get Only distinctive IDs
             let mut seen = HashSet::new();
             let distinct_ids: Vec<_> = menu_ids.into_iter().filter(|x| seen.insert((*x).clone())).collect();
 
@@ -147,6 +148,7 @@ pub async fn check_existence_and_insert_orders(
             return Err(HttpResponse::BadRequest());
         }
     };
+
     let users_rows_result = transaction.query_one(
         r#"
         SELECT
@@ -159,6 +161,7 @@ pub async fn check_existence_and_insert_orders(
         "#,
         &[&user_name]
     ).await;
+
     let user_id: i32 = match users_rows_result {
         Ok(users_row) => {
             users_row.get("id")
@@ -168,6 +171,7 @@ pub async fn check_existence_and_insert_orders(
             return Err(HttpResponse::BadRequest());
         }
     };
+
     let tables_row_result = transaction.query_one(
         r#"
         SELECT
@@ -180,6 +184,7 @@ pub async fn check_existence_and_insert_orders(
         "#,
         &[&restaurant_table_id]
     ).await;
+
     match tables_row_result {
         Ok(_tables_row) => {}
         Err(err) => {
@@ -187,9 +192,10 @@ pub async fn check_existence_and_insert_orders(
             return Err(HttpResponse::BadRequest());
         }
     };
+
     let current_datetime_utc = Utc::now();
 
-    // Using a tuple to store values directly
+    // 値を直接保存するために、タプル型に格納
     let menu_data: Vec<(i32, SystemTime)> = menu_seconds.iter()
         .map(|&(menu_id, seconds)| {
             let timestamp = (current_datetime_utc + Duration::seconds(seconds as i64)).into();
@@ -197,10 +203,9 @@ pub async fn check_existence_and_insert_orders(
         })
         .collect();
 
-    // Construct the params vector without storing references to local variables
+    // ローカル変数への参照を保存せずにパラメータ用のベクタを定義
     let params: Vec<Box<dyn ToSql + Sync>> = menu_data.iter()
         .flat_map(|&(menu_id, timestamp)| {
-            // To store i32 and SystemTime in a same Vec, we use box
             vec![
                 Box::new(restaurant_table_id) as Box<dyn ToSql + Sync>,
                 Box::new(menu_id),
@@ -210,7 +215,7 @@ pub async fn check_existence_and_insert_orders(
         })
         .collect();
     
-    // Construct the value strings
+    // 値の文字列を定義
     let values_strs: Vec<String> = (1..).step_by(4)
         .take(menu_data.len())
         .map(|i| format!("(${}, ${}, ${}, ${}, false)", i, i + 1, i + 2, i + 3))

@@ -11,7 +11,7 @@
 ## 技術スタック：
 
 - Rust (Actix Web)
-- JavaScript (Next.js) -> TypeScript (Next.js) に変更予定
+- TypeScript (Next.js)
 - Nginx
 - PostgreSQL
 - Docker
