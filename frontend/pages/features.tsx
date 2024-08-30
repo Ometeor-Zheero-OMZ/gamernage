@@ -4,7 +4,7 @@ const Features = () => {
       <div className="features-container">
         <div className="header-center">
           <h2 className="heading">
-            Let's give these techs a whirl - <span>Atari Engine</span>
+            Let&apos;s give these techs a whirl - <span>Atari Engine</span>
           </h2>
           <button className="btn">
             <span>Atari Engine</span>
@@ -72,3 +72,5 @@ const Features = () => {
     </>
   );
 };
+
+export default Features;
