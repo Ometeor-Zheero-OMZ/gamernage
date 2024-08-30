@@ -117,7 +117,10 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "pages/menu.js"
+    "pages/menu.js",
+    "postcss.config.js",
+    "next.config.js",
+    "tailwind.config.js"
   ],
   "exclude": ["node_modules"]
 }
