@@ -10,14 +10,16 @@ module.exports = {
       fontFamily: {
         "josefin-sans": ['"Josefin Sans"', "sans-serif"],
         montserrat: ['"Montserrat"', "sans-serif"],
-        bungee: ["Bungee", "sans-serif"],
+        dotGothic16: ["DotGothic16", "sans-serif"],
+        teko: ["Teko", "sans-serif"],
+        dm: ["DM Serif Text", "serif"],
       },
       colors: {
-        primary: "#b3b3ff",
-        secondary: "#9999ff",
-        tertiary: "#8080ff",
-        quaternary: "#6666ff",
-        quinary: "#4d4dff",
+        primary: "var(--color-primary)",
+        secondary: "var(--color-secondary)",
+        tertiary: "var(--color-tertiary)",
+        quaternary: "var(--color-quaternary)",
+        quinary: "var(--color-quinary)",
         "btn-left-bg": "#6c8df8",
         "btn-left-text": "#444",
         "btn-right-text": "#eee",
@@ -25,9 +27,6 @@ module.exports = {
       textShadow: {
         custom:
           "3px 3px 0 var(--color-secondary), 6px 6px 0 var(--color-tertiary), 9px 9px var(--color-quaternary), 12px 12px 0 var(--color-quinary)",
-      },
-      screens: {
-        "max-sm": { max: "480px" },
       },
       keyframes: {
         moveToLeft: {
@@ -86,6 +85,33 @@ module.exports = {
           "60%": { transform: "translate(-12px, -12px)" },
           "100%": { transform: "translate(0px, 0px)" },
         },
+        shimmer: {
+          from: {
+            backgroundPosition: "0 0",
+          },
+          to: {
+            backgroundPosition: "-200% 0",
+          },
+        },
+        lineSlide: {
+          "0%": { transform: "translateX(-20px)", opacity: "0" },
+          "50%": { transform: "translateX(0px)", opacity: "1" },
+          "100%": { transform: "translateX(0px)", opacity: "1" },
+        },
+        lineFade: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        "hamburger-open": {
+          "0%": { transform: "translateX(-20px)", opacity: "0" },
+          "50%": { transform: "translateX(0px)", opacity: "1" },
+          "100%": { transform: "translateX(0px)", opacity: "1" },
+        },
+        "hamburger-close": {
+          "0%": { transform: "translateX(-20px)", opacity: "0" },
+          "50%": { transform: "translateX(0px)", opacity: "1" },
+          "100%": { transform: "translateX(0px)", opacity: "1" },
+        },
       },
       animation: {
         moveToLeft: "moveToLeft 2s ease",
@@ -93,12 +119,38 @@ module.exports = {
         animateBtn: "animateBtn 1s ease",
         shadows: "shadows 1.2s ease-in infinite",
         move: "move 1.2s ease-in infinite",
+        "line-slide": "lineSlide 1s ease-out",
+        "line-fade": "lineFade 1s ease-out",
         "animate-btn-left": "animateBtn 1s 1.5s backwards",
         "animate-btn-right": "animateBtn 1s 2.3s backwards",
+        "hamburger-open": "hamburger-open 0.5s ease-in-out",
+        "hamburger-close": "hamburger-close 0.5s ease-in-out",
       },
       scale: {
         120: "1.2",
       },
+      spacing: {
+        7: "1.75rem",
+        14: "3.5rem",
+      },
+      rotate: {
+        45: "45deg",
+        "-45": "-45deg",
+        90: "90deg",
+      },
+      translate: {
+        6: "1.5rem",
+        "-6": "-1.5rem",
+      },
+    },
+    screens: {
+      xs: "480px",
+      sm: "640px",
+      md: "768px",
+      lg: "1024px",
+      xl: "1280px",
+      "2xl": "1536px",
+      770: "770px", // display Hamburger button
     },
   },
   plugins: [
