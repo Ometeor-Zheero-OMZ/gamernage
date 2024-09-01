@@ -4,3 +4,4 @@ mod controller;
 mod jwt;
 mod model;
 mod service;
+mod util;

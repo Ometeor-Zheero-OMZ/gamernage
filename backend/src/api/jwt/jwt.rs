@@ -3,6 +3,8 @@ use jsonwebtoken::{encode, decode, Header, Algorithm, EncodingKey, DecodingKey, 
 use serde::{Serialize, Deserialize};
 use std::time::{SystemTime, Duration};
 
+use crate::api::util::message::SVR_MSG;
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Claims {
     pub id: i32,
@@ -27,9 +29,19 @@ impl RequestHeaders for ServiceRequest {
     }
 }
 
+/// JWTの作成
+/// 
+/// # 引数
+/// 
+/// * `name` - ユーザー名
+/// * `id` - ユーザーID
+/// 
+/// # 戻り値
+/// 
+/// エンコード化したトークンを返却
 pub fn create_token(name: &str, id: i32) -> Result<String, jsonwebtoken::errors::Error> {
 
-    // 10日
+    // トークンの有効期限 10日
     let days = 60 * 60 * 24 * 10;
 
     let expiration = SystemTime::now() + Duration::from_secs(days);
@@ -41,12 +53,20 @@ pub fn create_token(name: &str, id: i32) -> Result<String, jsonwebtoken::errors:
     encode(&Header::default(), &claims, &EncodingKey::from_secret("secret".as_ref()))
 }
 
+/// JWTのデコード
+/// 
+/// # 引数
+/// 
+/// * `token` - JWT
+/// 
+/// # 戻り値
+/// 
+/// デコード化したクレームを返却
 pub fn decode_token(token: &str) -> Result<TokenData<Claims>, jsonwebtoken::errors::Error> {
     decode::<Claims>(token, &DecodingKey::from_secret("secret".as_ref()), &Validation::new(Algorithm::HS256))
 }
 
-pub fn verify <R: RequestHeaders>(req: &R)  -> Result<Claims, String>
-{
+pub fn verify <R: RequestHeaders>(req: &R)  -> Result<Claims, String> {
     // リクエストヘッダーから Bearer トークンを抽出できる場合
     if let Some(auth_header) = req.get_headers().get("Authorization") {
         if let Ok(auth_str) = auth_header.to_str() {
@@ -66,5 +86,5 @@ pub fn verify <R: RequestHeaders>(req: &R)  -> Result<Claims, String>
             }
         }
     }
-    return Err("リクエストヘッダーに認証トークンが見つかりませんでした。".to_owned());
+    return Err(SVR_MSG.get("TOKEN_NOT_FOUND_IN_REQUEST_HEADER_MSG").unwrap_or(&"").to_string());
 }
