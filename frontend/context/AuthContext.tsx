@@ -1,5 +1,10 @@
 "use client";
 
+import {
+  DYNAMIC_ERROR_MESSAGES,
+  ERROR_MESSAGES,
+  PG_ERROR_MESSAGES,
+} from "@/constants/message";
 import React, {
   createContext,
   useContext,
@@ -41,8 +46,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       });
 
       if (!response.ok) {
-        // Handle login failure
-        console.error("Login failed");
+        console.error(ERROR_MESSAGES.LOGIN_FAILED_MESSAGE);
         return false;
       }
 
@@ -84,8 +88,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       } else {
         return false;
       }
-    } catch (error) {
-      console.error("Failed to fetch current user", error);
+    } catch (error: any) {
+      console.error(
+        DYNAMIC_ERROR_MESSAGES(error).FETCH_CURRENT_USER_FAILED_MESSAGE
+      );
       return false;
     }
   };
@@ -97,11 +103,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         if (user) {
           setUser(user);
         } else {
-          console.log("Failed to load user");
+          console.log(ERROR_MESSAGES.LOAD_USER_FAILED_MESSAGE);
           setUser(null);
         }
-      } catch (error) {
-        console.error("Failed to fetch current user", error);
+      } catch (error: any) {
+        console.error(
+          DYNAMIC_ERROR_MESSAGES(error).FETCH_CURRENT_USER_FAILED_MESSAGE
+        );
         setUser(null);
       } finally {
         setLoading(false);
@@ -114,12 +122,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const logout = async () => {
     try {
       localStorage.removeItem("login_token");
-      // Handle logout logic here
       setUser(null);
-      return true; // logout successful
+      return true;
     } catch (error) {
-      // Handle logout failure
-      return false; // logout fail
+      return false;
     }
   };
 
@@ -133,7 +139,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error(PG_ERROR_MESSAGES.USEAUTH_REQUIRED_MESSAGE);
   }
   return context;
 };

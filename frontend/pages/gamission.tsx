@@ -20,6 +20,7 @@ import Input from "../components/Input/Input";
 import { TaskParam } from "../constants/type";
 import { useRouter } from "next/router";
 import { useAuth } from "@/context/AuthContext";
+import { ERROR_MESSAGES } from "@/constants/message";
 
 const Gamission = () => {
   const router = useRouter();
@@ -37,7 +38,7 @@ const Gamission = () => {
       }
 
       if (!loading && user) {
-        setIsLoading(true); // Fetchingが始まったのでローディング状態を開始する
+        setIsLoading(true);
 
         try {
           const response = await axios.get("/api/todos", {
@@ -49,12 +50,12 @@ const Gamission = () => {
           if (response.data.todos && Array.isArray(response.data.todos)) {
             setTasks(response.data.todos);
           } else {
-            setError("データ形式が正しくありません。");
+            setError(ERROR_MESSAGES.INVALID_DATA_FORMAT_NOT_ARRAY_MESSAGE);
           }
         } catch (err) {
-          setError("ミッションの取得に失敗しました。");
+          setError(ERROR_MESSAGES.FETCH_MISSION_FAILED_MESSAGE);
         } finally {
-          setIsLoading(false); // Fetchingが終了したのでローディング状態を終了する
+          setIsLoading(false);
         }
       }
     };
@@ -85,15 +86,13 @@ const Gamission = () => {
 
         setTasks((tasks) => [...tasks, response.data]);
       } catch (err) {
-        setError("ミッションの追加に失敗しました。");
+        setError(ERROR_MESSAGES.APPEND_MISSION_FAILED_MESSAGE);
       }
     }
   };
 
   // TODO更新
   const updateTask = async (updatedTask: TaskParam) => {
-    console.log("Called updateTask");
-
     if (!loading && !user) {
       router.push("/login");
       return;
@@ -112,15 +111,13 @@ const Gamission = () => {
           tasks.map((task) => (task.id === updatedTask.id ? updatedTask : task))
         );
       } catch (err) {
-        setError("ミッションの更新に失敗しました。");
+        setError(ERROR_MESSAGES.UPDATE_MISSION_FAILED_MESSAGE);
       }
     }
   };
 
   // TODO削除
   const deleteTask = async (taskId: number) => {
-    console.log("Called deleteTask");
-
     if (!loading && !user) {
       router.push("/login");
       return;
@@ -137,15 +134,13 @@ const Gamission = () => {
         });
         setTasks((tasks) => tasks.filter((task) => task.id !== taskId));
       } catch (err) {
-        setError("ミッションの削除に失敗しました。");
+        setError(ERROR_MESSAGES.DELETE_MISSION_FAILED_MESSAGE);
       }
     }
   };
 
   // TODOステータス更新
   const changeTaskStatus = async (taskId: number) => {
-    console.log("Called changeTaskStatus");
-
     if (!loading && !user) {
       router.push("/login");
       return;
@@ -166,7 +161,7 @@ const Gamission = () => {
           )
         );
       } catch (err) {
-        setError("ミッションの完了に失敗しました。");
+        setError(ERROR_MESSAGES.PUT_MISSION_STATUS_FAILED_MESSAGE);
       }
     }
   };
