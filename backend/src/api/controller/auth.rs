@@ -21,14 +21,23 @@ pub struct LoginRequest {
     password: String,
 }
 
+/// ログイン可能なユーザーかどうかを判定
+/// 
+/// # 引数
+/// 
+/// * `req` - リクエストパラメーター
+/// * `pool` - DBプール
+/// 
+/// # 戻り値
+/// 
+/// トークンを生成し、認証済みのユーザーデータを返却
+/// 認証済みでない場合は、401 を返却
 pub async fn login(
     req: web::Json<LoginRequest>,
     pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>
 ) -> impl Responder {
-    // Get a connection from the pool
     let conn = pool.get().await.unwrap();
 
-    // Execute a query using the connection from the pool
     let rows = conn.query(
         "SELECT id,name,password FROM users WHERE name = $1;",
         &[&req.name]
@@ -53,18 +62,17 @@ pub async fn login(
                         name: req.name.clone(),
                         token,
                     };
-
-                    HttpResponse::Ok().json(user_data)
+                    return HttpResponse::Ok().json(user_data);
                 },
                 Err(err) => {
                     logger::log(logger::Header::ERROR, &err.to_string());
-                    HttpResponse::InternalServerError().finish()
+                    return HttpResponse::InternalServerError().finish();
                 },
             }
         },
         Err(err) => {
             logger::log(logger::Header::ERROR, &err.to_string());
-            HttpResponse::new(StatusCode::UNAUTHORIZED)
+            return HttpResponse::new(StatusCode::UNAUTHORIZED);
         }
     }
 }
@@ -73,7 +81,7 @@ pub async fn login(
 /// 
 /// # 引数
 /// 
-/// * `req` - リクエストパラメータ
+/// * `req` - リクエストパラメーター
 /// 
 /// # 戻り値
 /// 

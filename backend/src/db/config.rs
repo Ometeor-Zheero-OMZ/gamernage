@@ -1,11 +1,21 @@
 use std::env;
 
-pub fn get_config () -> tokio_postgres::Config
-{
+/// 認証済みのユーザーデータを返却
+/// 
+/// # 引数
+/// 
+/// * `req` - リクエストパラメーター
+/// 
+/// # 戻り値
+/// 
+/// 認証済みのユーザーデータを返却
+/// 認証済みでない場合は、401 を返却
+pub fn get_config () -> tokio_postgres::Config {
     let mut config = tokio_postgres::Config::new();
-    config.host(&env::var("DATABASE_HOST").expect("DATABASE_HOST must be set"));
-    config.user(&env::var("DATABASE_USER").expect("DATABASE_USER must be set"));
-    config.password(&env::var("DATABASE_PASSWORD").expect("DATABASE_PASSWORD must be set"));
-    config.dbname(&env::var("DATABASE_NAME").expect("DATABASE_NAME must be set"));
-    return config;
+    config.host(&env::var("DATABASE_HOST").expect("環境変数 `DATABASE_HOST` は設定する必要があります。"));
+    config.user(&env::var("DATABASE_USER").expect("環境変数 `DATABASE_USER` は設定する必要があります。"));
+    config.password(&env::var("DATABASE_PASSWORD").expect("環境変数 `DATABASE_PASSWORD` は設定する必要があります。"));
+    config.dbname(&env::var("DATABASE_NAME").expect("環境変数 `DATABASE_NAME` は設定する必要があります。"));
+
+    config
 }
