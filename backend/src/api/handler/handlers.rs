@@ -4,12 +4,29 @@ use actix_web::{
 };
 use crate::api::controller::{auth, menu, order, restaurant_table, todo};
 
+/// 存在しないパスにアクセスした際に 404 ステータスコードを返却
+/// 
+/// # 引数
+/// 
+/// * `req` - リクエストパラメーター
+/// 
+/// # 戻り値
+/// 
+/// 404 ステータスコードを返却
 async fn handler(req: HttpRequest) -> Result<HttpResponse> {
-    // For 404
     let path = req.path();
-    Ok(HttpResponse::NotFound().body(format!("This API: '{}' does not exist.", path)))
+    Ok(HttpResponse::NotFound().body(format!("APIが見つかりませんでした： '{}'", path)))
 }
 
+/// APIパスを管理
+/// 
+/// # 引数
+/// 
+/// なし
+/// 
+/// # 戻り値
+/// 
+/// 全APIパスをスコープして返却
 pub fn api_scope() -> Scope {
     web::scope("/api")
         .route("/auth/login", web::post().to(auth::login))
@@ -34,6 +51,6 @@ pub fn api_scope() -> Scope {
         .route("/todo", web::delete().to(todo::delete_todo))
         // TODO完了
         .route("/todo/change-status", web::post().to(todo::complete_todo))
-                
+        // 存在しないパスにアクセスしようとした際に handler メソッドをトリガー
         .default_service(web::route().to(handler))
 }

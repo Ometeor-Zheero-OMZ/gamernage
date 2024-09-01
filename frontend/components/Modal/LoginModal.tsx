@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { ChangeEvent, FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import React, { useRef } from "react";
+import { ERROR_MESSAGES } from "@/constants/message";
 
 type LoginModalProps = {
   isVisible: boolean;
@@ -42,7 +43,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isVisible, onClose }) => {
     if (isSuccess) {
       router.push("/gamission");
     } else {
-      alert("ログインに失敗しました。");
+      alert(ERROR_MESSAGES.LOGIN_FAILED_MESSAGE);
     }
   };
 

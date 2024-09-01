@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { ChangeEvent, FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "@/styles/Login.module.css";
+import { ERROR_MESSAGES } from "@/constants/message";
 
 const LoginPage = () => {
   const router = useRouter();
@@ -29,7 +30,7 @@ const LoginPage = () => {
     if (isSuccess) {
       router.push("/gamission");
     } else {
-      alert("ログインに失敗しました。");
+      alert(ERROR_MESSAGES.LOGIN_FAILED_MESSAGE);
     }
   };
 
