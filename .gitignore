@@ -1,5 +1,6 @@
 .vscode
 .vscode/*
-/.memo.txt
 backend/target
 backend/.env
+.env
+.dockerignore
