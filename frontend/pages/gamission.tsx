@@ -29,37 +29,37 @@ const Gamission = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // TODO一覧取得
-    const fetchTasks = async () => {
-      if (!loading && !user) {
-        router.push("/login");
-        return;
-      }
+  // TODO一覧取得
+  const fetchTasks = async () => {
+    if (!loading && !user) {
+      router.push("/login");
+      return;
+    }
 
-      if (!loading && user) {
-        setIsLoading(true);
+    if (!loading && user) {
+      setIsLoading(true);
 
-        try {
-          const response = await axios.get("/api/todos", {
-            headers: { Authorization: `Bearer ${user.token}` },
-          });
+      try {
+        const response = await axios.get("/api/todos", {
+          headers: { Authorization: `Bearer ${user.token}` },
+        });
 
-          console.log(`response.data.todos: ${response.data.todos}`);
+        console.log(`response.data.todos: ${response.data.todos}`);
 
-          if (response.data.todos && Array.isArray(response.data.todos)) {
-            setTasks(response.data.todos);
-          } else {
-            setError(ERROR_MESSAGES.INVALID_DATA_FORMAT_NOT_ARRAY_MESSAGE);
-          }
-        } catch (err) {
-          setError(ERROR_MESSAGES.FETCH_MISSION_FAILED_MESSAGE);
-        } finally {
-          setIsLoading(false);
+        if (response.data.todos && Array.isArray(response.data.todos)) {
+          setTasks(response.data.todos);
+        } else {
+          setError(ERROR_MESSAGES.INVALID_DATA_FORMAT_NOT_ARRAY_MESSAGE);
         }
+      } catch (err) {
+        setError(ERROR_MESSAGES.FETCH_MISSION_FAILED_MESSAGE);
+      } finally {
+        setIsLoading(false);
       }
-    };
+    }
+  };
 
+  useEffect(() => {
     fetchTasks();
   }, [loading, user, router]);
 
@@ -82,9 +82,7 @@ const Gamission = () => {
           },
         });
 
-        console.log(`response: ${JSON.stringify(response)}`);
-
-        setTasks((tasks) => [...tasks, response.data]);
+        await fetchTasks();
       } catch (err) {
         setError(ERROR_MESSAGES.APPEND_MISSION_FAILED_MESSAGE);
       }
