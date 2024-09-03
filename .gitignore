@@ -2,5 +2,6 @@
 .vscode/*
 backend/target
 backend/.env
+docker/postgresql/.env.db
 .env
 .dockerignore
