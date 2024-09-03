@@ -21,9 +21,15 @@ lazy_static! {
         map.insert("DB_CONNECTION_FAILURE_MSG", "🔥 データベース接続に失敗しました。");
         map.insert("TRANSACTION_COMMIT_FAILURE_MSG", "トランザクションをコミット中にエラーが発生しました：");
         map.insert("TRANSACTION_ROLLBACK_FAILURE_MSG", "トランザクションをロールバック中にエラーが発生しました：");
+
+        // ユーザー情報取得
         map.insert("USER_INFO_NOT_FOUND_MSG", "ユーザー情報が存在しません。");
 
+        // CRUD
+        map.insert("FETCH_DATA_SUCCESS_MSG", "データ取得に成功しました。");
         map.insert("CREATE_DATA_SUCCESS_MSG", "データ作成に成功しました。");
+        map.insert("UPDATE_DATA_SUCCESS_MSG", "データ更新に成功しました。");
+        map.insert("DELETE_DATA_SUCCESS_MSG", "データ削除に成功しました。");
 
         map
     };

@@ -44,26 +44,36 @@ where
     dev::forward_ready!(service);
 
     fn call(&self, request: ServiceRequest) -> Self::Future {
-        let is_logged_in = match jwt::verify(&request) {
-            Ok(_user_info) => true,
-            Err(_) => false
-        };
+        // 認証なしでアクセスできるエンドポイントのリスト
+        let exempt_paths = vec![
+            "/api/auth/guest_login",
+            "/api/auth/signup",
+            "/api/auth/login",
+            "/api/auth/current_user"
+        ];
 
-        if !is_logged_in && !(request.path() == "/api/auth/login" || request.path() == "/api/auth/current_user") {
-            let (request, _pl) = request.into_parts();
+        let is_exempt = exempt_paths.contains(&request.path());
 
-            let response = HttpResponse::Unauthorized()
-                .finish()
-                // 左側のボディ型から右側のボディ型に変換
-                .map_into_right_body();
-
-            return Box::pin(async { Ok(ServiceResponse::new(request, response)) });
+        if !is_exempt {
+            let is_logged_in = match jwt::verify(&request) {
+                Ok(_user_info) => true,
+                Err(_) => false
+            };
+    
+            if !is_logged_in {
+                let (request, _pl) = request.into_parts();
+    
+                let response = HttpResponse::Unauthorized()
+                    .finish()
+                    .map_into_right_body();
+    
+                return Box::pin(async { Ok(ServiceResponse::new(request, response)) });
+            }
         }
 
         let res = self.service.call(request);
 
         Box::pin(async move {
-            // 左側のボディ型にレスポンスをフォワーディング
             res.await.map(ServiceResponse::map_into_left_body)
         })
     }

@@ -1,5 +1,6 @@
 export const ERROR_MESSAGES = {
   LOGIN_FAILED_MESSAGE: "ログインに失敗しました。",
+  LOAD_USER_NOT_FOUND_MESSAGE: "ユーザーはログインしていません。",
   LOAD_USER_FAILED_MESSAGE: "ユーザーの読み込みに失敗しました。",
   INVALID_DATA_FORMAT_NOT_ARRAY_MESSAGE:
     "データ形式が正しくありません。Array型を期待しています。",

@@ -43,7 +43,6 @@ module.exports = {
           shadows: "shadows 1.2s ease-in infinite",
           move: "move 1.2s ease-in infinite",
         },
-
         shadows: {
           "0%": { textShadow: "none" },
           "10%": { textShadow: "3px 3px 0 var(--color-secondary)" },
@@ -85,6 +84,10 @@ module.exports = {
           "60%": { transform: "translate(-12px, -12px)" },
           "100%": { transform: "translate(0px, 0px)" },
         },
+        fadeIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
         shimmer: {
           from: {
             backgroundPosition: "0 0",
@@ -119,10 +122,11 @@ module.exports = {
         animateBtn: "animateBtn 1s ease",
         shadows: "shadows 1.2s ease-in infinite",
         move: "move 1.2s ease-in infinite",
+        fadeIn: "fadeIn 2s ease",
         "line-slide": "lineSlide 1s ease-out",
         "line-fade": "lineFade 1s ease-out",
-        "animate-btn-left": "animateBtn 1s 1.5s backwards",
-        "animate-btn-right": "animateBtn 1s 2.3s backwards",
+        "btn-left": "animateBtn 1s 1.5s backwards",
+        "btn-right": "animateBtn 1s 2.3s backwards",
         "hamburger-open": "hamburger-open 0.5s ease-in-out",
         "hamburger-close": "hamburger-close 0.5s ease-in-out",
       },

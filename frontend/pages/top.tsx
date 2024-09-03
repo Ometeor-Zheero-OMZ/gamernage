@@ -1,8 +1,38 @@
-import ColorfulButton from "@/components/ui/ColorfulButton";
+import OutlineButton from "@/components/ui/OutlineButton";
 import SimpleColorfulButton from "@/components/ui/SimpleColorfulButton";
 import { FaLocationArrow } from "react-icons/fa6";
+import { useAuth } from "@/context/AuthContext";
+import { useState } from "react";
+import { useRouter } from "next/router";
+import { ERROR_MESSAGES } from "@/constants/message";
+import SignupModal from "@/components/Modal/SignupModal";
 
 export default function Home() {
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isSignupVisible, setIsSignupVisible] = useState(false);
+  const router = useRouter();
+  const { guestLogin } = useAuth();
+
+  const handleGuestLogin = async () => {
+    setIsLoggingIn(true);
+    let isSuccess = await guestLogin();
+    setIsLoggingIn(false);
+
+    if (isSuccess) {
+      router.push("/index");
+    } else {
+      alert(ERROR_MESSAGES.LOGIN_FAILED_MESSAGE);
+    }
+  };
+
+  const handleCloseSignup = () => {
+    setIsSignupVisible(false);
+  };
+
+  const handleSignupClick = () => {
+    setIsSignupVisible(true);
+  };
+
   return (
     <>
       {/* Hero Container */}
@@ -23,10 +53,21 @@ export default function Home() {
           <p className="font-teko text-6xl font-bold text-light mb-20 animate-moveToRight tracking-wider sm:text-5xl md:text-5xl lg:text-6xl">
             Share Your Game Training Menus
           </p>
-          {/* <ColorfulButton title="Get Started" position="right" /> */}
-          <SimpleColorfulButton title="Get Started" />
+          <OutlineButton
+            title="Guest Login"
+            position="right"
+            icon={<FaLocationArrow />}
+            handleClick={handleGuestLogin}
+          />
+          <SimpleColorfulButton
+            title="Get Started"
+            handleClick={handleSignupClick}
+          />
         </div>
       </div>
+
+      {/* モーダルを表示 */}
+      <SignupModal isVisible={isSignupVisible} onClose={handleCloseSignup} />
     </>
   );
 }

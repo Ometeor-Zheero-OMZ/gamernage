@@ -2,12 +2,20 @@ use actix_web::{
     HttpResponse,
     Responder, HttpRequest, web, http::StatusCode
 };
-use bcrypt::verify;
+use bcrypt::{verify, hash, DEFAULT_COST};
+use postgres::error::SqlState;
 use tokio_postgres::NoTls;
 use serde::{Deserialize, Serialize};
 use bb8_postgres::{
     PostgresConnectionManager,
     bb8::Pool
+};
+use argon2::{
+    password_hash::{
+        rand_core::OsRng,
+        PasswordHash, PasswordHasher, PasswordVerifier, SaltString
+    },
+    Argon2
 };
 use crate::{
     api::jwt::jwt,
@@ -16,9 +24,21 @@ use crate::{
 };
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct SignupRequest {
+    name: String,
+    email: String,
+    password: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct LoginRequest {
     name: String,
     password: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct VerificationRequest {
+    token: String
 }
 
 /// ログイン可能なユーザーかどうかを判定
@@ -30,9 +50,11 @@ pub struct LoginRequest {
 /// 
 /// # 戻り値
 /// 
+/// * `impl Responder` - HTTPレスポンス
+/// 
 /// トークンを生成し、認証済みのユーザーデータを返却
 /// 認証済みでない場合は、401 を返却
-pub async fn login(
+pub async fn guest_login(
     req: web::Json<LoginRequest>,
     pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>
 ) -> impl Responder {
@@ -52,6 +74,176 @@ pub async fn login(
 
     // パスワードが有効か判定
     match verify(&req.password, &password) {
+        Ok(_) => {
+            // 有効の場合、トークンを生成
+            match jwt::create_token(&req.name, id) {
+                Ok(token) => {
+                    // ユーザー情報を作成
+                    let user_data = User {
+                        id,
+                        name: req.name.clone(),
+                        token,
+                    };
+                    return HttpResponse::Ok().json(user_data);
+                },
+                Err(err) => {
+                    logger::log(logger::Header::ERROR, &err.to_string());
+                    return HttpResponse::InternalServerError().finish();
+                },
+            }
+        },
+        Err(err) => {
+            logger::log(logger::Header::ERROR, &err.to_string());
+            return HttpResponse::new(StatusCode::UNAUTHORIZED);
+        }
+    }
+}
+
+/// サインアップ処理
+/// 
+/// # 引数
+/// 
+/// * `req` - リクエストパラメーター
+/// * `pool` - DBプール
+/// 
+/// # 戻り値
+/// 
+/// トークンを生成し、認証済みのユーザーデータを返却
+pub async fn signup(
+    req: web::Json<SignupRequest>,
+    pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>
+) -> impl Responder {
+    // database connection pool
+    let conn = match pool.get().await {
+        Ok(conn) => conn,
+        Err(err) => {
+            logger::log(logger::Header::ERROR, &err.to_string());
+            return HttpResponse::InternalServerError().finish();
+        }
+    };
+
+    // argon2 password hashing logic
+    let argon2 = Argon2::default();
+    let salt = SaltString::generate(&mut OsRng);
+    let hashed_password = match argon2.hash_password(&req.password.as_bytes(), &salt) {
+        Ok(hash) => hash.to_string(),
+        Err(err) => {
+            logger::log(logger::Header::ERROR, &err.to_string());
+            return HttpResponse::InternalServerError().finish();
+        }
+    };
+
+    logger::log(logger::Header::INFO, &format!("{:?}", req.name));
+    logger::log(logger::Header::INFO, &format!("{:?}", hashed_password));
+    logger::log(logger::Header::INFO, &format!("{:?}", req.email));
+
+    // insert hashed password as user info into the table `users`
+    match conn.execute(
+        "INSERT INTO users (name, password, email) VALUES ($1, $2, $3)",
+        &[&req.name, &hashed_password, &req.email]
+    ).await {
+        Ok(_) => {
+            logger::log(logger::Header::SUCCESS, "Successfully signed up");
+            return HttpResponse::Ok().finish();
+        },
+        Err(ref err) if err.code() == Some(&SqlState::UNIQUE_VIOLATION) => {
+            logger::log(logger::Header::ERROR, "name already exists");
+            return HttpResponse::BadRequest().body("name already exists");
+        },
+        Err(err) => {
+            logger::log(logger::Header::ERROR, &err.to_string());
+            return HttpResponse::InternalServerError().finish();
+        }
+    }
+}
+
+// pub async fn verify_email(
+//     req: web::Query<VerificationRequest>,
+//     pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>
+// ) -> impl Responder {
+//     let conn = pool.get().await.unwrap();
+
+//     // トークンを使ってユーザーを確認
+//     match conn.query(
+//         "SELECT user_id FROM email_verification_tokens WHERE token = $1",
+//         &[&req.token]
+//     ).await {
+//         Ok(row) => {
+//             let user_id: i32 = row.get(0);
+
+//             // ユーザーを確認済みとしてマーク
+//             conn.execute(
+//                 "UPDATE users SET email_verified = TRUE WHERE id = $1",
+//                 &[&user_id]
+//             ).await.unwrap();
+
+//             // 有効の場合、トークンを生成
+//             match jwt::create_token(&req.name, user_id) {
+//                 Ok(token) => {
+//                     // ユーザー情報を作成
+//                     let user_data = User {
+//                         id: user_id,
+//                         name: req.name.clone(),
+//                         token,
+//                     };
+//                     return HttpResponse::Ok().json(user_data);
+//                 },
+//                 Err(err) => {
+//                     logger::log(logger::Header::ERROR, &err.to_string());
+//                     return HttpResponse::InternalServerError().finish();
+//                 },
+//             }
+//         },
+//         Err(err) => {
+//             logger::log(logger::Header::ERROR, &err.to_string());
+//             return HttpResponse::InternalServerError().finish();
+//         }
+//     }
+// }
+
+/// ログイン処理
+/// 
+/// # 引数
+/// 
+/// * `req` - リクエストパラメーター
+/// * `pool` - DBプール
+/// 
+/// # 戻り値
+/// 
+/// トークンを生成し、認証済みのユーザーデータを返却
+/// 認証済みでない場合は、401 を返却
+pub async fn login(
+    req: web::Json<LoginRequest>,
+    pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>
+) -> impl Responder {
+    let conn = pool.get().await.unwrap();
+
+    let rows = conn.query(
+        "SELECT id, name, password FROM users WHERE name = $1;",
+        &[&req.name]
+    ).await.unwrap();
+
+    if rows.is_empty() {
+        return HttpResponse::Unauthorized().finish();
+    }
+
+    let password: String = rows.get(0).unwrap().get("password");
+    let id: i32 = rows.get(0).unwrap().get("id");
+
+    let argon2 = Argon2::default();
+    let parsed_hash = match PasswordHash::new(&password) {
+        Ok(hash) => hash,
+        Err(_) => {
+            logger::log(logger::Header::ERROR, "Failed hashing a password");
+            return HttpResponse::InternalServerError().finish();
+        }
+    };
+
+    logger::log(logger::Header::INFO, &format!("{:?}", req.name));
+    logger::log(logger::Header::INFO, &format!("{:?}", parsed_hash));
+
+    // パスワードが有効か判定
+    match argon2.verify_password(&req.password.as_bytes(), &parsed_hash) {
         Ok(_) => {
             // 有効の場合、トークンを生成
             match jwt::create_token(&req.name, id) {
