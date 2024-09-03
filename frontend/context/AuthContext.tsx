@@ -5,6 +5,7 @@ import {
   ERROR_MESSAGES,
   PG_ERROR_MESSAGES,
 } from "@/constants/message";
+import axios from "axios";
 import React, {
   createContext,
   useContext,
@@ -19,12 +20,26 @@ type User = {
   token: string;
 };
 
+type SignupRequest = {
+  name: string;
+  email: string;
+  password: string;
+};
+
+type LoginRequest = {
+  name: string;
+  password: string;
+};
+
 type AuthContextType = {
   user: User | null;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   loading: boolean;
+  signup: (name: string, email: string, password: string) => Promise<boolean>;
+  verifyEmail: (token: string) => Promise<boolean>;
   login: (name: string, password: string) => Promise<boolean>;
   logout: () => Promise<boolean>;
+  guestLogin: () => Promise<boolean>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,34 +50,64 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const login = async (name: string, password: string) => {
-    try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, password }),
-      });
+  const signup = async (name: string, email: string, password: string) => {
+    const signupRequest: SignupRequest = { name, email, password };
 
-      if (!response.ok) {
-        console.error(ERROR_MESSAGES.LOGIN_FAILED_MESSAGE);
+    try {
+      const response = await axios.post("/api/auth/signup", signupRequest);
+
+      if (response.status !== 200) {
+        console.error("サインアップに失敗しました。");
         return false;
       }
 
-      const userData = await response.json();
-      userData.sub = userData.name;
-      userData.id = userData.id;
-      console.log(userData);
+      console.log("確認メールを送信しました。");
 
-      // ローカルストレージにトークンを保存
-      window.localStorage.setItem("login_token", userData.token);
-
-      // ユーザー情報をアプリケーションの状態に設定
-      setUser(userData);
+      // サインアップ成功後の処理
       return true;
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("サインアップエラー:", error);
+      return false;
+    }
+  };
+
+  const verifyEmail = async (token: string) => {
+    try {
+      const response = await axios.get(`/api/auth/verify_email?token=${token}`);
+
+      if (response.data) {
+        console.log("メールアドレスが確認されました。");
+        // ログイン処理または認証後の画面に遷移
+        return true;
+      } else {
+        console.error("メール確認に失敗しました。");
+        return false;
+      }
+    } catch (error) {
+      console.error("確認エラー:", error);
+      return false;
+    }
+  };
+
+  const login = async (name: string, password: string) => {
+    const loginRequest: LoginRequest = { name, password };
+
+    try {
+      const response = await axios.post("/api/auth/login", loginRequest);
+
+      const loginUserData = response.data;
+      loginUserData.sub = loginUserData.name;
+      loginUserData.id = loginUserData.id;
+      console.log(loginUserData);
+
+      // ローカルストレージにトークンを保存
+      window.localStorage.setItem("login_token", loginUserData.token);
+
+      // ユーザー情報をアプリケーションの状態に設定
+      setUser(loginUserData);
+      return true;
+    } catch (error) {
+      console.error(ERROR_MESSAGES.LOGIN_FAILED_MESSAGE);
       return false;
     }
   };
@@ -74,24 +119,46 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         console.log(token);
         return false;
       }
-      const response = await fetch("/api/auth/current_user", {
-        method: "GET",
+      const response = await axios.get("/api/auth/current_user", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      if (response.ok) {
-        const user = await response.json();
-        user.token = token;
-        return user;
-      } else {
-        return false;
-      }
+      const currentUserData = response.data;
+      currentUserData.token = token;
+      return currentUserData;
     } catch (error: any) {
       console.error(
         DYNAMIC_ERROR_MESSAGES(error).FETCH_CURRENT_USER_FAILED_MESSAGE
       );
+      return false;
+    }
+  };
+
+  const guestLogin = async () => {
+    // テストデータ
+    const name = "test_user1";
+    const password = "password";
+
+    try {
+      const response = await axios.post("/api/auth/guest_login", {
+        name,
+        password,
+      });
+
+      const loginUserData = response.data;
+      loginUserData.sub = loginUserData.name;
+      loginUserData.id = loginUserData.id;
+
+      // ローカルストレージにトークンを保存
+      window.localStorage.setItem("login_token", loginUserData.token);
+
+      // ユーザー情報をアプリケーションの状態に設定
+      setUser(loginUserData);
+      return true;
+    } catch (error) {
+      console.error(ERROR_MESSAGES.LOGIN_FAILED_MESSAGE);
       return false;
     }
   };
@@ -103,7 +170,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         if (user) {
           setUser(user);
         } else {
-          console.log(ERROR_MESSAGES.LOAD_USER_FAILED_MESSAGE);
+          console.log(ERROR_MESSAGES.LOAD_USER_NOT_FOUND_MESSAGE);
           setUser(null);
         }
       } catch (error: any) {
@@ -130,7 +197,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        setUser,
+        loading,
+        signup,
+        verifyEmail,
+        login,
+        logout,
+        guestLogin,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

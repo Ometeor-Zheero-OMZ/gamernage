@@ -28,9 +28,15 @@ async fn handler(req: HttpRequest) -> Result<HttpResponse> {
 /// 
 /// 全APIパスをスコープして返却
 pub fn api_scope() -> Scope {
+    // /auth/... は未認証でもアクセスできるパス
+    // 未認証でもアクセスできるパスを設定する場合、jwt_middeware.rs にて設定してください。
     web::scope("/api")
+        .route("/auth/guest_login", web::post().to(auth::guest_login))
+        .route("/auth/signup", web::post().to(auth::signup))
         .route("/auth/login", web::post().to(auth::login))
         .route("/auth/current_user", web::get().to(auth::current_user))
+        // 確認メール
+        // .route("/api/auth/verify_email", web::get().to(auth::verify_email))
         .route("/table", web::get().to(restaurant_table::get_tables))
         .route("/table/{restaurant_table_id}/order", web::get().to(restaurant_table::get_table_orders))
         .route("/table/order", web::delete().to(restaurant_table::delete_orders))

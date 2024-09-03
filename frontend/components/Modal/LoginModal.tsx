@@ -35,12 +35,12 @@ const LoginModal: React.FC<LoginModalProps> = ({ isVisible, onClose }) => {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("called handleSubmit");
     setIsLoggingIn(true);
     let isSuccess = await login(name, password);
     setIsLoggingIn(false);
 
     if (isSuccess) {
+      onClose();
       router.push("/gamission");
     } else {
       alert(ERROR_MESSAGES.LOGIN_FAILED_MESSAGE);
@@ -82,10 +82,10 @@ const LoginModal: React.FC<LoginModalProps> = ({ isVisible, onClose }) => {
           <div className="mb-4 relative">
             <i className="fas fa-user absolute top-4 left-4 text-lg text-[#aaa]"></i>
             <input
-              id="name"
               className="w-[250px] py-3 pl-12 pr-4 border-none outline-none rounded-[30px] bg-[#00000099] text-[#ddd] text-lg"
               type="text"
               placeholder="Username"
+              name="name"
               onChange={handleNameChange}
               required
             />
@@ -93,7 +93,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ isVisible, onClose }) => {
           <div className="mb-4 relative">
             <i className="fas fa-key absolute top-4 left-4 text-lg text-[#aaa]"></i>
             <input
-              id="password"
               className="w-[250px] py-3 pl-12 pr-4 border-none outline-none rounded-[30px] bg-[#00000099] text-[#ddd] text-lg"
               type="password"
               placeholder="Password"

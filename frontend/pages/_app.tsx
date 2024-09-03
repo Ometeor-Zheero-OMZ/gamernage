@@ -2,7 +2,7 @@
 
 import "../styles/globals.css";
 import Link from "next/link";
-import React from "react";
+import React, { useState } from "react";
 import { AuthProvider } from "../context/AuthContext";
 import { Inter } from "next/font/google";
 import { AppProps } from "next/app";
@@ -15,10 +15,21 @@ import SteamIcon from "../public/img/icon-steam.svg";
 import ColorfulButton from "@/components/ui/ColorfulButton";
 import AuthenticationForm from "@/components/AuthenticationForm";
 import Header from "@/components/Header";
+import SignupModal from "@/components/Modal/SignupModal";
 
 const inter = Inter({ subsets: ["latin"] });
 
 const App = ({ Component, pageProps }: AppProps) => {
+  const [isSignupVisible, setIsSignupVisible] = useState(false);
+
+  const handleCloseSignup = () => {
+    setIsSignupVisible(false);
+  };
+
+  const handleSignupClick = () => {
+    setIsSignupVisible(true);
+  };
+
   return (
     <>
       <Head>
@@ -45,10 +56,16 @@ const App = ({ Component, pageProps }: AppProps) => {
               Boost Your Creativity Now
             </h5>
             <div>
-              <ColorfulButton title="Get Started" />
+              <ColorfulButton
+                title="Get Started"
+                handleClick={handleSignupClick}
+              />
             </div>
           </div>
         </section>
+
+        {/* モーダルを表示 */}
+        <SignupModal isVisible={isSignupVisible} onClose={handleCloseSignup} />
 
         {/* Footer */}
         <footer
@@ -77,19 +94,19 @@ const App = ({ Component, pageProps }: AppProps) => {
                     href="#"
                     className="capitalize no-underline text-[#6c8df8] text-[20px] pb-[10px] hover:text-[#9274ff] duration-300"
                   >
-                    Gamernage
+                    GManage
                   </Link>
                   <Link
                     href="#"
                     className="capitalize no-underline text-[#6c8df8] text-[20px] pb-[10px] hover:text-[#9274ff] duration-300"
                   >
-                    GameLink
+                    GLink
                   </Link>
                   <Link
                     href="#"
                     className="capitalize no-underline text-[#6c8df8] text-[20px] pb-[10px] hover:text-[#9274ff] duration-300"
                   >
-                    Ataria VR
+                    GThread
                   </Link>
                 </div>
               </div>

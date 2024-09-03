@@ -1,2 +1,3 @@
 # to prevent the compiled code to be copied in the rust Dockerfile
 backend/target/
+.env

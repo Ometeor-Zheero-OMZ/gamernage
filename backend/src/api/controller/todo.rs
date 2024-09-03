@@ -6,7 +6,7 @@ use chrono::NaiveDateTime;
 use std::time::SystemTime;
 use serde::{Deserialize, Serialize};
 
-use crate::{api::{jwt::jwt, util::message::DB_MSG}, library::logger};
+use crate::{api::{jwt::jwt, service::user_service::get_user_id, util::message::DB_MSG}, library::logger};
 // use crate::api::model::todo::TodoItem;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -107,6 +107,15 @@ pub async fn get_todos(
         }
     };
 
+    // ユーザーの存在チェック
+    let user_id = match get_user_id(&user, &transaction).await {
+        Ok(user_id) => user_id,
+        Err(err) => {
+            logger::log(logger::Header::ERROR, &err.to_string());
+            return HttpResponse::BadRequest().json(format!("{}", DB_MSG.get("USER_INFO_NOT_FOUND_MSG").unwrap_or(&"")))
+        }
+    };
+
     let rows_result = transaction.query(
         r#"
         SELECT
@@ -116,7 +125,7 @@ pub async fn get_todos(
         WHERE
             user_id = $1
         "#,
-        &[&user.id]
+        &[&user_id]
     ).await;
 
     match rows_result {
@@ -183,7 +192,7 @@ pub async fn get_todos(
                 logger::log(logger::Header::ERROR, &format!("{} {}", DB_MSG.get("TRANSACTION_COMMIT_FAILURE_MSG").unwrap_or(&""), e.to_string()));
                 return HttpResponse::InternalServerError().finish();
             }
-            logger::log(logger::Header::SUCCESS, DB_MSG.get("CREATE_DATA_SUCCESS_MSG").unwrap_or(&""));
+            logger::log(logger::Header::SUCCESS, DB_MSG.get("FETCH_DATA_SUCCESS_MSG").unwrap_or(&""));
             return HttpResponse::Ok().json(ResponseTodoList { todos });
         }
         Err(err) => {
@@ -237,6 +246,15 @@ pub async fn create_todo(
         }
     };
     
+    // ユーザーの存在チェック
+    let user_id = match get_user_id(&user, &transaction).await {
+        Ok(user_id) => user_id,
+        Err(err) => {
+            logger::log(logger::Header::ERROR, &err.to_string());
+            return HttpResponse::BadRequest().json(format!("{}", DB_MSG.get("USER_INFO_NOT_FOUND_MSG").unwrap_or(&"")))
+        }
+    };
+    
     let row_result = transaction.query_one(
         r#"
         INSERT INTO todos (user_id, title, description, is_completed)
@@ -244,7 +262,7 @@ pub async fn create_todo(
         RETURNING *
         "#,
         &[
-            &user.id,
+            &user_id,
             &todo_req.title,
             &todo_req.description,
         ]
@@ -262,6 +280,7 @@ pub async fn create_todo(
                 logger::log(logger::Header::ERROR, &format!("{} {}", DB_MSG.get("TRANSACTION_COMMIT_FAILURE_MSG").unwrap_or(&""), e.to_string()));
                 return HttpResponse::InternalServerError().finish();
             }
+            logger::log(logger::Header::SUCCESS, DB_MSG.get("CREATE_DATA_SUCCESS_MSG").unwrap_or(&""));
             return HttpResponse::Ok().json(new_todo);
         },
         Err(err) => {
@@ -287,10 +306,18 @@ pub async fn create_todo(
 /// 200 ステータスコードを返却
 /// データ取得に失敗した場合は、500 ステータスコードを返却
 pub async fn update_todo(
-    _req: HttpRequest,
+    req: HttpRequest,
     todo_req: web::Json<UpdateTodoItem>,
     pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>
 ) -> impl Responder {
+    let user = match jwt::verify(&req) {
+        Ok(user_info) => user_info,
+        Err(err) => {
+            logger::log(logger::Header::ERROR, &err.to_string());
+            return HttpResponse::new(StatusCode::UNAUTHORIZED);
+        }
+    };
+
     let mut conn = match pool.get().await {
         Ok(conn) => conn,
         Err(err) => {
@@ -304,6 +331,15 @@ pub async fn update_todo(
         Err(err) => {
             logger::log(logger::Header::ERROR, &err.to_string());
             return HttpResponse::InternalServerError().finish();
+        }
+    };
+
+    // ユーザーの存在チェック
+    let _user_id = match get_user_id(&user, &transaction).await {
+        Ok(user_id) => user_id,
+        Err(err) => {
+            logger::log(logger::Header::ERROR, &err.to_string());
+            return HttpResponse::BadRequest().json(format!("{}", DB_MSG.get("USER_INFO_NOT_FOUND_MSG").unwrap_or(&"")))
         }
     };
 
@@ -332,9 +368,13 @@ pub async fn update_todo(
                 logger::log(logger::Header::ERROR, &format!("{} {}", DB_MSG.get("TRANSACTION_COMMIT_FAILURE_MSG").unwrap_or(&""), e.to_string()));
                 return HttpResponse::InternalServerError().finish();
             }
+            logger::log(logger::Header::SUCCESS, DB_MSG.get("UPDATE_DATA_SUCCESS_MSG").unwrap_or(&""));
             return HttpResponse::Ok().finish();
         },
         Err(err) => {
+            if let Err(e) = transaction.rollback().await {
+                logger::log(logger::Header::ERROR, &format!("{} {}", DB_MSG.get("TRANSACTION_ROLLBACK_FAILURE_MSG").unwrap_or(&""), e.to_string()));
+            }
             logger::log(logger::Header::ERROR, &err.to_string());
             return HttpResponse::InternalServerError().finish();
         }
@@ -354,10 +394,18 @@ pub async fn update_todo(
 /// 200 ステータスコードを返却
 /// データ取得に失敗した場合は、500 ステータスコードを返却
 pub async fn delete_todo(
-    _req: HttpRequest,
+    req: HttpRequest,
     todo_req: web::Json<DeleteTodoItem>,
     pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>
 ) -> impl Responder {
+    let user = match jwt::verify(&req) {
+        Ok(user_info) => user_info,
+        Err(err) => {
+            logger::log(logger::Header::ERROR, &err.to_string());
+            return HttpResponse::new(StatusCode::UNAUTHORIZED);
+        }
+    };
+
     let mut conn = match pool.get().await {
         Ok(conn) => conn,
         Err(err) => {
@@ -371,6 +419,15 @@ pub async fn delete_todo(
         Err(err) => {
             logger::log(logger::Header::ERROR, &err.to_string());
             return HttpResponse::InternalServerError().finish();
+        }
+    };
+
+    // ユーザーの存在チェック
+    let _user_id = match get_user_id(&user, &transaction).await {
+        Ok(user_id) => user_id,
+        Err(err) => {
+            logger::log(logger::Header::ERROR, &err.to_string());
+            return HttpResponse::BadRequest().json(format!("{}", DB_MSG.get("USER_INFO_NOT_FOUND_MSG").unwrap_or(&"")))
         }
     };
 
@@ -394,16 +451,20 @@ pub async fn delete_todo(
                 logger::log(logger::Header::ERROR, &format!("{} {}", DB_MSG.get("TRANSACTION_COMMIT_FAILURE_MSG").unwrap_or(&""), e.to_string()));
                 return HttpResponse::InternalServerError().finish();
             }
+            logger::log(logger::Header::SUCCESS, DB_MSG.get("DELETE_DATA_SUCCESS_MSG").unwrap_or(&""));
             return HttpResponse::Ok().finish();
         },
         Err(err) => {
+            if let Err(e) = transaction.rollback().await {
+                logger::log(logger::Header::ERROR, &format!("{} {}", DB_MSG.get("TRANSACTION_ROLLBACK_FAILURE_MSG").unwrap_or(&""), e.to_string()));
+            }
             logger::log(logger::Header::ERROR, &err.to_string());
             return HttpResponse::InternalServerError().finish();
         }
     };
 }
 
-/// todo データを論理削除
+/// todo ステータスを更新
 /// 
 /// # 引数
 /// 
@@ -445,19 +506,10 @@ pub async fn complete_todo(
     };
     
     // ユーザーの存在チェック
-    let user_row_result = transaction.query_one(
-        r#"
-        SELECT id
-        FROM users
-        WHERE name = $1
-        "#,
-        &[&user.sub]
-    ).await;
-    let user_id: i32 = match user_row_result {
-        Ok(user_row) => user_row.get("id"),
+    let user_id = match get_user_id(&user, &transaction).await {
+        Ok(user_id) => user_id,
         Err(err) => {
             logger::log(logger::Header::ERROR, &err.to_string());
-            // return HttpResponse::BadRequest().json(format!("ユーザー情報が存在しません。"))
             return HttpResponse::BadRequest().json(format!("{}", DB_MSG.get("USER_INFO_NOT_FOUND_MSG").unwrap_or(&"")))
         }
     };
@@ -480,13 +532,19 @@ pub async fn complete_todo(
         ]
     ).await;
 
-    transaction.commit().await.unwrap();
-
     match rows_result {
         Ok(_result) => {
+            if let Err(e) = transaction.commit().await {
+                logger::log(logger::Header::ERROR, &format!("{} {}", DB_MSG.get("TRANSACTION_COMMIT_FAILURE_MSG").unwrap_or(&""), e.to_string()));
+                return HttpResponse::InternalServerError().finish();
+            }
+            logger::log(logger::Header::SUCCESS, DB_MSG.get("UPDATE_DATA_SUCCESS_MSG").unwrap_or(&""));
             return HttpResponse::Ok().finish();
         },
         Err(err) => {
+            if let Err(e) = transaction.rollback().await {
+                logger::log(logger::Header::ERROR, &format!("{} {}", DB_MSG.get("TRANSACTION_ROLLBACK_FAILURE_MSG").unwrap_or(&""), e.to_string()));
+            }
             logger::log(logger::Header::ERROR, &err.to_string());
             return HttpResponse::InternalServerError().finish();
         }

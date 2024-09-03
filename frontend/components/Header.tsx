@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import AuthenticationForm from "./AuthenticationForm"; // 実際のファイルパスに合わせてください
+import AuthenticationForm from "./AuthenticationForm";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -18,14 +18,14 @@ const Header = () => {
       setInitialAnimation(false);
       const timer = setTimeout(() => {
         setAnimateLines(false);
-      }, 1000); // アニメーションの時間に合わせて調整
+      }, 1000);
       return () => clearTimeout(timer);
     }
   }, [initialAnimation]);
 
   return (
     <header className="box-border w-full h-[68px] bg-black relative">
-      <div className="flex items-center justify-between max-w-[1024px] h-[70px] px-[0.8em] mx-auto text-[1.2em]">
+      <div className="flex items-center justify-between max-w-[1024px] h-[70px] px-[0.8em] mx-auto text-[1.2em] animate-fadeIn">
         <div id="logo" className="w-[70px]">
           <Link
             href="/"
@@ -106,10 +106,10 @@ const Header = () => {
       {isMenuOpen && (
         <>
           <div
-            className="fixed inset-0 bg-black bg-opacity-70 z-40"
+            className="fixed inset-0 bg-black bg-opacity-70 z-40 animate-fadeIn"
             onClick={toggleMenu}
           />
-          <div className="fixed top-[0px] left-0 w-full bg-black text-white p-10 z-50">
+          <div className="fixed top-[0px] left-0 w-full bg-black text-white p-10 z-50 animate-fadeIn">
             <ul className="list-none flex flex-col">
               <li className="py-2 hover:bg-[rgba(87, 87, 87, 0.8)]">
                 <Link
