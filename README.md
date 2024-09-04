@@ -1,4 +1,4 @@
-# Gamernage
+# Ataria
 
 ## ゲーマーのためのコミュニティサイトを作成することを目指しています。
 
@@ -10,8 +10,19 @@
 
 ## 技術スタック：
 
+言語・フレームワーク
 - Rust (Actix Web)
 - TypeScript (Next.js)
-- Nginx
+
+DB
 - PostgreSQL
+
+インフラ
+- Nginx
 - Docker
+- AWS (現在環境設定中)
+
+## テーブル設計
+エンティティやカラム等追加がある場合は随時更新しています。
+
+![Ataria drawio](https://github.com/user-attachments/assets/5053d5e5-318d-48b3-8c79-a48e2bab7c1c)
