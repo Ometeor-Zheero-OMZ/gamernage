@@ -116,9 +116,6 @@ pub async fn get_todos(
         }
     };
 
-    logger::log(logger::Header::SUCCESS, &format!("todos: {:?}", user_id));
-
-
     let rows_result = transaction.query(
         r#"
         SELECT
@@ -130,9 +127,6 @@ pub async fn get_todos(
         "#,
         &[&user_id]
     ).await;
-
-    logger::log(logger::Header::SUCCESS, &format!("todos: {:?}", rows_result));
-
 
     match rows_result {
         Ok(rows) => {
@@ -193,10 +187,6 @@ pub async fn get_todos(
                     deleted_at,
                 }
             }).collect();
-
-
-            logger::log(logger::Header::SUCCESS, &format!("todos: {:?}", todos));
-
 
             if let Err(e) = transaction.commit().await {
                 logger::log(logger::Header::ERROR, &format!("{} {}", DB_MSG.get("TRANSACTION_COMMIT_FAILURE_MSG").unwrap_or(&""), e.to_string()));
