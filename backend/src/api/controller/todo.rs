@@ -12,8 +12,8 @@ use crate::{api::{jwt::jwt, service::user_service::get_user_id, util::message::D
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TodoItem {
     pub id: i32,
-    pub user_id: Option<i32>,
-    pub game_id: Option<i32>,
+    pub user_id: Option<String>,
+    pub game_id: Option<String>,
     pub title: String,
     pub description: String,
     pub is_completed: bool,
@@ -116,6 +116,9 @@ pub async fn get_todos(
         }
     };
 
+    logger::log(logger::Header::SUCCESS, &format!("todos: {:?}", user_id));
+
+
     let rows_result = transaction.query(
         r#"
         SELECT
@@ -128,12 +131,15 @@ pub async fn get_todos(
         &[&user_id]
     ).await;
 
+    logger::log(logger::Header::SUCCESS, &format!("todos: {:?}", rows_result));
+
+
     match rows_result {
         Ok(rows) => {
             let todos: Vec<TodoItem> = rows.into_iter().map(|row| {       
                 let id: i32 = row.get("id");
-                let user_id: Option<i32> = row.get("user_id");
-                let game_id: Option<i32> = row.get("game_id");
+                let user_id: Option<String> = row.get("user_id");
+                let game_id: Option<String> = row.get("game_id");
                 let title: String = row.get("title");
                 let description: String = row.get("description");
                 let is_completed: bool = row.get("is_completed");
@@ -187,6 +193,10 @@ pub async fn get_todos(
                     deleted_at,
                 }
             }).collect();
+
+
+            logger::log(logger::Header::SUCCESS, &format!("todos: {:?}", todos));
+
 
             if let Err(e) = transaction.commit().await {
                 logger::log(logger::Header::ERROR, &format!("{} {}", DB_MSG.get("TRANSACTION_COMMIT_FAILURE_MSG").unwrap_or(&""), e.to_string()));
