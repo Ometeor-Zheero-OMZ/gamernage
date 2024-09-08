@@ -44,8 +44,6 @@ const Gamission = () => {
           headers: { Authorization: `Bearer ${user.token}` },
         });
 
-        console.log(`response.data.todos: ${response.data.todos}`);
-
         if (response.data.todos && Array.isArray(response.data.todos)) {
           setTasks(response.data.todos);
         } else {

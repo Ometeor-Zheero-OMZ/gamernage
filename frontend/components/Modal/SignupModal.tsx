@@ -120,7 +120,7 @@ const SignupModal: React.FC<LoginModalProps> = ({ isVisible, onClose }) => {
             className="w-[310px] py-3 px-4 border-none outline-none rounded-[30px] bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-lg uppercase my-2.5 shadow-[0_5px_20px_rgba(0,0,0,0.4)] cursor-pointer transition-transform duration-300 hover:translate-y-[-2px] hover:shadow-[0_8px_25px_rgba(0,0,0,0.3)] active:translate-y-0"
             type="submit"
           >
-            Log In
+            Sign Up
           </button>
         </form>
       </div>
