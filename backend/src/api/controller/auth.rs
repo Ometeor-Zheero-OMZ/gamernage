@@ -2,7 +2,8 @@ use actix_web::{
     HttpResponse,
     Responder, HttpRequest, web, http::StatusCode
 };
-use bcrypt::{verify, hash, DEFAULT_COST};
+// use bcrypt::{verify, hash, DEFAULT_COST};
+use bcrypt::verify;
 use postgres::error::SqlState;
 use tokio_postgres::NoTls;
 use serde::{Deserialize, Serialize};
@@ -70,13 +71,13 @@ pub async fn guest_login(
     }
 
     let password: String = rows.get(0).unwrap().get("password");
-    let id: i32 = rows.get(0).unwrap().get("id");
+    let id: String = rows.get(0).unwrap().get("id");
 
     // パスワードが有効か判定
     match verify(&req.password, &password) {
         Ok(_) => {
             // 有効の場合、トークンを生成
-            match jwt::create_token(&req.name, id) {
+            match jwt::create_token(&req.name, &id) {
                 Ok(token) => {
                     // ユーザー情報を作成
                     let user_data = User {
@@ -132,10 +133,6 @@ pub async fn signup(
             return HttpResponse::InternalServerError().finish();
         }
     };
-
-    logger::log(logger::Header::INFO, &format!("{:?}", req.name));
-    logger::log(logger::Header::INFO, &format!("{:?}", hashed_password));
-    logger::log(logger::Header::INFO, &format!("{:?}", req.email));
 
     // insert hashed password as user info into the table `users`
     match conn.execute(
@@ -228,7 +225,7 @@ pub async fn login(
     }
 
     let password: String = rows.get(0).unwrap().get("password");
-    let id: i32 = rows.get(0).unwrap().get("id");
+    let id: String = rows.get(0).unwrap().get("id");
 
     let argon2 = Argon2::default();
     let parsed_hash = match PasswordHash::new(&password) {
@@ -239,14 +236,11 @@ pub async fn login(
         }
     };
 
-    logger::log(logger::Header::INFO, &format!("{:?}", req.name));
-    logger::log(logger::Header::INFO, &format!("{:?}", parsed_hash));
-
     // パスワードが有効か判定
     match argon2.verify_password(&req.password.as_bytes(), &parsed_hash) {
         Ok(_) => {
             // 有効の場合、トークンを生成
-            match jwt::create_token(&req.name, id) {
+            match jwt::create_token(&req.name, &id) {
                 Ok(token) => {
                     // ユーザー情報を作成
                     let user_data = User {

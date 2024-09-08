@@ -1,8 +1,17 @@
 use crate::{api::jwt::jwt::Claims, library::logger};
 use tokio_postgres::Error;
 
-
-pub async fn get_user_id(user: &Claims, transaction: &tokio_postgres::Transaction<'_>) -> Result<i32, Error> {
+/// get_user_id　user_idの取得
+/// 
+/// # 引数
+/// 
+/// * `user` - ユーザー情報
+/// * `transaction` - トランザクション
+/// 
+/// # 戻り値
+/// 
+/// * `Result<String, Error>`
+pub async fn get_user_id(user: &Claims, transaction: &tokio_postgres::Transaction<'_>) -> Result<String, Error> {
     // ユーザーの存在チェック
     let user_row_result = match transaction.query_one(
         r#"
