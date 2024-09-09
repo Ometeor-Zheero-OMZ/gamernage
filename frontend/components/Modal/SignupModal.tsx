@@ -4,13 +4,9 @@ import { useAuth } from "../../context/AuthContext";
 import { ChangeEvent, FormEvent, useState } from "react";
 import React, { useRef } from "react";
 import { ERROR_MESSAGES } from "@/constants/message";
+import { SignupModalProps } from "@/types/type";
 
-type LoginModalProps = {
-  isVisible: boolean;
-  onClose: () => void;
-};
-
-const SignupModal: React.FC<LoginModalProps> = ({ isVisible, onClose }) => {
+const SignupModal: React.FC<SignupModalProps> = ({ isVisible, onClose }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");

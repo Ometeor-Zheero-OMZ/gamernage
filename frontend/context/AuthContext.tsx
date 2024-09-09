@@ -5,6 +5,12 @@ import {
   ERROR_MESSAGES,
   PG_ERROR_MESSAGES,
 } from "@/constants/message";
+import {
+  AuthContextType,
+  LoginRequest,
+  SignupRequest,
+  User,
+} from "@/types/type";
 import axios from "axios";
 import React, {
   createContext,
@@ -13,34 +19,6 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-
-type User = {
-  id: number;
-  name: string;
-  token: string;
-};
-
-type SignupRequest = {
-  name: string;
-  email: string;
-  password: string;
-};
-
-type LoginRequest = {
-  name: string;
-  password: string;
-};
-
-type AuthContextType = {
-  user: User | null;
-  setUser: React.Dispatch<React.SetStateAction<User | null>>;
-  loading: boolean;
-  signup: (name: string, email: string, password: string) => Promise<boolean>;
-  verifyEmail: (token: string) => Promise<boolean>;
-  login: (name: string, password: string) => Promise<boolean>;
-  logout: () => Promise<boolean>;
-  guestLogin: () => Promise<boolean>;
-};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 

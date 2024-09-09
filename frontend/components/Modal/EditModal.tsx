@@ -1,12 +1,5 @@
 import React, { useState } from "react";
-import { TaskParam } from "@/constants/type";
-
-type EditModalProps = {
-  task: TaskParam;
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (updatedTask: TaskParam) => void;
-};
+import { EditModalProps } from "@/types/type";
 
 const EditModal: React.FC<EditModalProps> = ({
   task,

@@ -3,7 +3,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { ColumnProps, TaskParam } from "../../constants/type";
+import { ColumnProps, TaskParam } from "../../types/type";
 import Task from "../Task/Task";
 
 const Column: React.FC<ColumnProps> = ({ tasks }) => {

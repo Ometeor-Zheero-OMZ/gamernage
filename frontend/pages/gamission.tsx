@@ -17,7 +17,7 @@ import axios from "axios";
 
 import Column from "../components/Column/Column";
 import Input from "../components/Input/Input";
-import { TaskParam } from "../constants/type";
+import { TaskParam } from "../types/type";
 import { useRouter } from "next/router";
 import { useAuth } from "@/context/AuthContext";
 import { ERROR_MESSAGES } from "@/constants/message";

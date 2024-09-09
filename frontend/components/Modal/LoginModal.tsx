@@ -5,11 +5,7 @@ import { ChangeEvent, FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import React, { useRef } from "react";
 import { ERROR_MESSAGES } from "@/constants/message";
-
-type LoginModalProps = {
-  isVisible: boolean;
-  onClose: () => void;
-};
+import { LoginModalProps } from "@/types/type";
 
 const LoginModal: React.FC<LoginModalProps> = ({ isVisible, onClose }) => {
   const modalRef = useRef<HTMLDivElement>(null);
