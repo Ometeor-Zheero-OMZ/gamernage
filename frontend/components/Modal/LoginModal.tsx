@@ -12,7 +12,6 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { LoginModalProps } from "@/types/type";
 import { useToast } from "@/hooks/use-toast";
-import { Toaster } from "../ui/Toaster";
 
 const LoginModal: FC<LoginModalProps> = ({ isVisible, onClose }) => {
   const modalRef = useRef<HTMLDivElement>(null);
