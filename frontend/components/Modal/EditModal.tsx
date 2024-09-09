@@ -1,12 +1,7 @@
-import React, { useState } from "react";
+import { FC, useState } from "react";
 import { EditModalProps } from "@/types/type";
 
-const EditModal: React.FC<EditModalProps> = ({
-  task,
-  isOpen,
-  onClose,
-  onSave,
-}) => {
+const EditModal: FC<EditModalProps> = ({ task, isOpen, onClose, onSave }) => {
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description);
 

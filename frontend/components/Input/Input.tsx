@@ -1,7 +1,7 @@
-import { InputProps } from "../../types/type";
-import React, { useState } from "react";
+import { FC, useState } from "react";
+import { InputProps } from "@/types/type";
 
-const Input: React.FC<InputProps> = ({ onSubmit }) => {
+const Input: FC<InputProps> = ({ onSubmit }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 

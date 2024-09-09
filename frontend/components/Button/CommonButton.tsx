@@ -1,7 +1,7 @@
+import { FC } from "react";
 import { CommonButtonProps } from "@/types/type";
-import React from "react";
 
-const CommonButton: React.FC<CommonButtonProps> = ({ children, onClick }) => {
+const CommonButton: FC<CommonButtonProps> = ({ children, onClick }) => {
   return (
     <div>
       <button

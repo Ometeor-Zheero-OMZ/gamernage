@@ -1,20 +1,27 @@
 "use client";
 
-import { useAuth } from "../../context/AuthContext";
-import { ChangeEvent, FormEvent, useState } from "react";
-import React, { useRef } from "react";
-import { ERROR_MESSAGES } from "@/constants/message";
+import {
+  FC,
+  ChangeEvent,
+  FormEvent,
+  useState,
+  useRef,
+  MouseEvent,
+} from "react";
+import { useAuth } from "@/context/AuthContext";
 import { SignupModalProps } from "@/types/type";
+import { useToast } from "@/hooks/use-toast";
 
-const SignupModal: React.FC<SignupModalProps> = ({ isVisible, onClose }) => {
+const SignupModal: FC<SignupModalProps> = ({ isVisible, onClose }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { signup } = useAuth();
+  const { toast } = useToast();
 
-  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleOverlayClick = (e: MouseEvent<HTMLDivElement>) => {
     if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
       onClose();
     }
@@ -40,9 +47,15 @@ const SignupModal: React.FC<SignupModalProps> = ({ isVisible, onClose }) => {
 
     if (isSuccess) {
       onClose();
-      alert("Successfully signed up");
-    } else {
-      alert(ERROR_MESSAGES.LOGIN_FAILED_MESSAGE);
+
+      toast({
+        title: "Authentication Success",
+        description: "You successfully signed up!",
+        variant: "default",
+        style: {
+          backgroundColor: "#ffffff",
+        },
+      });
     }
   };
 
