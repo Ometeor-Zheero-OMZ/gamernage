@@ -21,6 +21,7 @@ import { TaskParam } from "../types/type";
 import { useRouter } from "next/router";
 import { useAuth } from "@/context/AuthContext";
 import { ERROR_MESSAGES } from "@/constants/message";
+import Navbar from "@/components/Navbar";
 
 const Gamission = () => {
   const router = useRouter();
@@ -58,6 +59,10 @@ const Gamission = () => {
   };
 
   useEffect(() => {
+    if (!user) {
+      router.push("/");
+    }
+
     fetchTasks();
   }, [loading, user, router]);
 
@@ -73,7 +78,7 @@ const Gamission = () => {
     const reqBody = { title, description };
     if (user) {
       try {
-        const response = await axios.post("/api/todo", reqBody, {
+        await axios.post("/api/todo", reqBody, {
           headers: {
             Authorization: `Bearer ${user.token}`,
             "Content-Type": "application/json",
@@ -186,17 +191,20 @@ const Gamission = () => {
   const sensors = useSensors(useSensor(PointerSensor), useSensor(TouchSensor));
 
   return (
-    <div className="w-full h-full flex flex-col items-center gap-12 mt-2.5">
-      <h1>今日のミッション</h1>
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragEnd={handleDragEnd}
-      >
-        <Input onSubmit={addTask} />
-        <Column tasks={tasks} />
-      </DndContext>
-    </div>
+    <>
+      <Navbar />
+      <div className="w-full h-full flex flex-col items-center gap-12 mt-2.5">
+        <h1>今日のミッション</h1>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragEnd={handleDragEnd}
+        >
+          <Input onSubmit={addTask} />
+          <Column tasks={tasks} />
+        </DndContext>
+      </div>
+    </>
   );
 };
 
