@@ -145,7 +145,7 @@ pub async fn signup(
         },
         Err(ref err) if err.code() == Some(&SqlState::UNIQUE_VIOLATION) => {
             logger::log(logger::Header::ERROR, "name already exists");
-            return HttpResponse::BadRequest().body("name already exists");
+            return HttpResponse::new(StatusCode::CONFLICT);
         },
         Err(err) => {
             logger::log(logger::Header::ERROR, &err.to_string());
