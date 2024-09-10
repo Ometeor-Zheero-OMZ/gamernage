@@ -1,7 +1,6 @@
-use std::time::SystemTime;
-
 use async_trait::async_trait;
-use chrono::NaiveDateTime;
+use chrono::{DateTime, NaiveDateTime, Utc};
+use std::time::{SystemTime, UNIX_EPOCH};
 use tokio_postgres::{Transaction, NoTls};
 use bb8_postgres::{PostgresConnectionManager, bb8::Pool};
 use crate::db::models::todo::{CompleteTodoItem, DeleteTodoItem, RequestCreateTodoItem, ResponseCreateTodoItem, TodoItem, UpdateTodoItem};
@@ -68,6 +67,13 @@ impl TodoRepository for TodoRepositoryImpl {
         ).await?;
 
         let todos: Vec<TodoItem> = rows.into_iter().map(|row| {
+            let convert_timestamp = |time: SystemTime| -> NaiveDateTime {
+                let duration = time.duration_since(UNIX_EPOCH).unwrap();
+                DateTime::<Utc>::from_timestamp(duration.as_secs() as i64, 0)
+                    .unwrap()
+                    .naive_utc()
+            };
+
             TodoItem {
                 id: row.get("id"),
                 user_id: row.get("user_id"),
@@ -78,16 +84,10 @@ impl TodoRepository for TodoRepositoryImpl {
                 status: row.get("status"),
                 priority: row.get("priority"),
                 difficulty: row.get("difficulty"),
-                deadline: row.get::<_, Option<SystemTime>>("deadline")
-                    .and_then(|time| NaiveDateTime::from_timestamp_opt(time.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as i64, 0)),
-                created_at: row.get::<_, Option<SystemTime>>("created_at")
-                    .and_then(|time| NaiveDateTime::from_timestamp_opt(time.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as i64, 0))
-                    .expect("created_at must be NOT NULL"),
-                updated_at: row.get::<_, Option<SystemTime>>("updated_at")
-                    .and_then(|time| NaiveDateTime::from_timestamp_opt(time.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as i64, 0))
-                    .expect("updated_at must be NOT NULL"),
-                deleted_at: row.get::<_, Option<SystemTime>>("deleted_at")
-                    .and_then(|time| NaiveDateTime::from_timestamp_opt(time.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as i64, 0)),
+                deadline: row.get::<_, Option<SystemTime>>("deadline").map(convert_timestamp),
+                created_at: convert_timestamp(row.get("created_at")),
+                updated_at: convert_timestamp(row.get("updated_at")),
+                deleted_at: row.get::<_, Option<SystemTime>>("deleted_at").map(convert_timestamp),
             }
         }).collect();
 
