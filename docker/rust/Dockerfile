@@ -1,4 +1,4 @@
-FROM rust:1.72
+FROM rust:1.80.0
 
 WORKDIR /backend
 

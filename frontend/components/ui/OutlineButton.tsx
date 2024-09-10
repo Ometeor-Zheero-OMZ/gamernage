@@ -1,4 +1,4 @@
-import React from "react";
+import { ReactNode } from "react";
 
 const OutlineButton = ({
   title,
@@ -8,7 +8,7 @@ const OutlineButton = ({
   otherClasses,
 }: {
   title: string;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
   position?: string;
   handleClick?: () => void;
   otherClasses?: string;

@@ -1,25 +1,28 @@
 "use client";
 
-import { useAuth } from "../../context/AuthContext";
-import { ChangeEvent, FormEvent, useState } from "react";
+import {
+  FC,
+  MouseEvent,
+  ChangeEvent,
+  FormEvent,
+  useState,
+  useRef,
+} from "react";
 import { useRouter } from "next/navigation";
-import React, { useRef } from "react";
-import { ERROR_MESSAGES } from "@/constants/message";
+import { useAuth } from "@/context/AuthContext";
+import { LoginModalProps } from "@/types/type";
+import { useToast } from "@/hooks/use-toast";
 
-type LoginModalProps = {
-  isVisible: boolean;
-  onClose: () => void;
-};
-
-const LoginModal: React.FC<LoginModalProps> = ({ isVisible, onClose }) => {
+const LoginModal: FC<LoginModalProps> = ({ isVisible, onClose }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { login } = useAuth();
+  const { toast } = useToast();
 
-  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleOverlayClick = (e: MouseEvent<HTMLDivElement>) => {
     if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
       onClose();
     }
@@ -42,8 +45,15 @@ const LoginModal: React.FC<LoginModalProps> = ({ isVisible, onClose }) => {
     if (isSuccess) {
       onClose();
       router.push("/gamission");
-    } else {
-      alert(ERROR_MESSAGES.LOGIN_FAILED_MESSAGE);
+
+      toast({
+        title: "Authentication Success",
+        description: "You successfully logged in!",
+        variant: "default",
+        style: {
+          backgroundColor: "#ffffff",
+        },
+      });
     }
   };
 
