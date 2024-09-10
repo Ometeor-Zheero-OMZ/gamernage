@@ -10,6 +10,7 @@ import SignupModal from "@/components/Modal/SignupModal";
 import OutlineButton from "@/components/ui/OutlineButton";
 import SimpleColorfulButton from "@/components/ui/SimpleColorfulButton";
 import { Toaster } from "@/components/ui/Toaster";
+import Head from "next/head";
 
 export default function Home() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -49,6 +50,10 @@ export default function Home() {
 
   return (
     <>
+      <Head>
+        <title>Ataria - Game community & Game Training Menu</title>
+      </Head>
+
       <Navbar />
       {/* Hero Container */}
       <div

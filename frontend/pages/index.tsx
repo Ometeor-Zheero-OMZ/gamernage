@@ -83,6 +83,7 @@ export default function Home() {
             position="right"
             icon={<FaLocationArrow />}
             handleClick={handleGuestLogin}
+            aria-label="Guest Login"
           />
           <SimpleColorfulButton
             title="Get Started"

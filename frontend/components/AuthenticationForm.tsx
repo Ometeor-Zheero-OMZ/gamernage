@@ -8,7 +8,7 @@ const AuthenticationForm: FC = () => {
   const [isSignupVisible, setIsSignupVisible] = useState(false);
   const [isLoginVisible, setIsLoginVisible] = useState(false);
 
-  const { user, loading, signOut } = useAuth();
+  const { user, signOut } = useAuth();
 
   const handleSignupClick = () => {
     setIsSignupVisible(true);
