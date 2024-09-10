@@ -1,20 +1,14 @@
-use std::sync::Arc;
-
 use actix_cors::Cors;
 use actix_web::{web::Data, App, HttpServer};
 use dotenvy::dotenv;
 
 use api::middlewares::jwt_middleware;
-use constants::custom_type::{AuthRepositoryArc, TodoRepositoryArc};
-use db::repositories::{
-    auth_repository::AuthRepositoryImpl,
-    todo_repository::TodoRepositoryImpl
-};
 use libraries::app_state::AppState;
 
 mod api;
 mod constants;
 mod db;
+mod errors;
 mod libraries;
 
 const PROJECT_PATH: &'static str = env!("CARGO_MANIFEST_DIR");
@@ -26,13 +20,7 @@ async fn main() -> std::io::Result<()> {
 
     let pool = db::pool::get_db_pool().await;
 
-    let todo_repository: TodoRepositoryArc = Arc::new(TodoRepositoryImpl::new(pool.clone()));
-    let auth_repository: AuthRepositoryArc = Arc::new(AuthRepositoryImpl::new(pool.clone()));
-
-    let app_state = AppState {
-        todo_repository: Arc::clone(&todo_repository),
-        auth_repository: Arc::clone(&auth_repository),
-    };
+    let app_state = AppState::init(&pool);
 
     HttpServer::new(move || {
         let cors = Cors::default()
