@@ -1,31 +1,15 @@
 use actix_web::{
     HttpResponse,
-    Responder, HttpRequest, web, http::StatusCode
+    Responder,
+    HttpRequest,
+    web, http::StatusCode
 };
 use postgres::error::SqlState;
-use tokio_postgres::NoTls;
-use bb8_postgres::{
-    PostgresConnectionManager,
-    bb8::Pool
-};
-use argon2::{
-    password_hash::{
-        rand_core::OsRng,
-        PasswordHash,
-        PasswordHasher,
-        PasswordVerifier,
-        SaltString
-    },
-    Argon2
-};
 use crate::{
-    api::jwt::jwt, constants::custom_type::AuthRepositoryArc, db::models::{
-        auth::{
-            LoginRequest,
-            SignupRequest
-        },
-        user::User
-    }, libraries::{
+    api::jwt::jwt, db::models::auth::{
+        LoginRequest,
+        SignupRequest
+    }, errors::custom_error::AuthError, libraries::{
         app_state::AppState,
         logger
     }
@@ -46,24 +30,16 @@ use crate::{
 /// 認証済みでない場合は、401 を返却
 pub async fn guest_login(
     req: web::Json<LoginRequest>,
-    pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>,
     app_state: web::Data<AppState>
 ) -> impl Responder {
-    let auth_repository: &AuthRepositoryArc = &app_state.auth_repository;
+    let auth_service = &app_state.auth_service;
 
-    let conn = match pool.get().await {
-        Ok(conn) => conn,
-        Err(err) => {
-            logger::log(logger::Header::ERROR, &err.to_string());
-            return HttpResponse::InternalServerError().finish();
+    match auth_service.guest_login(&req).await {
+        Ok(Some(user_data)) => HttpResponse::Ok().json(user_data),
+        Ok(None) => {
+            logger::log(logger::Header::ERROR, "User not found");
+            HttpResponse::new(StatusCode::UNAUTHORIZED)
         }
-    };
-
-    match auth_repository.guest_login(&req, &conn).await {
-        Ok(Some(user_data)) => {
-            HttpResponse::Ok().json(user_data)
-        }
-        Ok(None) => HttpResponse::Unauthorized().finish(),
         Err(err) => {
             logger::log(logger::Header::ERROR, &err.to_string());
             HttpResponse::InternalServerError().finish()
@@ -83,44 +59,29 @@ pub async fn guest_login(
 /// トークンを生成し、認証済みのユーザーデータを返却
 pub async fn signup(
     req: web::Json<SignupRequest>,
-    pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>
+    app_state: web::Data<AppState>
 ) -> impl Responder {
-    // database connection pool
-    let conn = match pool.get().await {
-        Ok(conn) => conn,
-        Err(err) => {
-            logger::log(logger::Header::ERROR, &err.to_string());
-            return HttpResponse::InternalServerError().finish();
-        }
-    };
+    let auth_service = &app_state.auth_service;
 
-    // argon2 password hashing logic
-    let argon2 = Argon2::default();
-    let salt = SaltString::generate(&mut OsRng);
-    let hashed_password = match argon2.hash_password(&req.password.as_bytes(), &salt) {
-        Ok(hash) => hash.to_string(),
-        Err(err) => {
-            logger::log(logger::Header::ERROR, &err.to_string());
-            return HttpResponse::InternalServerError().finish();
-        }
-    };
-
-    // insert hashed password as user info into the table `users`
-    match conn.execute(
-        "INSERT INTO users (name, password, email) VALUES ($1, $2, $3)",
-        &[&req.name, &hashed_password, &req.email]
-    ).await {
-        Ok(_) => {
+    match auth_service.signup(&req).await {
+        Ok(()) => {
             logger::log(logger::Header::SUCCESS, "Successfully signed up");
-            return HttpResponse::Ok().finish();
-        },
-        Err(ref err) if err.code() == Some(&SqlState::UNIQUE_VIOLATION) => {
-            logger::log(logger::Header::ERROR, "name already exists");
-            return HttpResponse::new(StatusCode::CONFLICT);
-        },
+            HttpResponse::Ok().finish()
+        }
+        Err(AuthError::DatabaseError(ref err)) => {
+            if let Some(db_error) = err.as_db_error() {
+                if db_error.code() == &SqlState::UNIQUE_VIOLATION {
+                    logger::log(logger::Header::ERROR, "name already exists");
+                    return HttpResponse::new(StatusCode::CONFLICT);
+                }
+            }
+
+            logger::log(logger::Header::ERROR, "database error");
+            HttpResponse::InternalServerError().finish()
+        }
         Err(err) => {
             logger::log(logger::Header::ERROR, &err.to_string());
-            return HttpResponse::InternalServerError().finish();
+            HttpResponse::InternalServerError().finish()
         }
     }
 }
@@ -182,60 +143,19 @@ pub async fn signup(
 /// 認証済みでない場合は、401 を返却
 pub async fn login(
     req: web::Json<LoginRequest>,
-    pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>
+    app_state: web::Data<AppState>
 ) -> impl Responder {
-    let conn = match pool.get().await {
-        Ok(conn) => conn,
+    let auth_service = &app_state.auth_service;
+
+    match auth_service.login(&req).await {
+        Ok(Some(user_data)) => HttpResponse::Ok().json(user_data),
+        Ok(None) => {
+            logger::log(logger::Header::ERROR, "User not found");
+            HttpResponse::new(StatusCode::UNAUTHORIZED)
+        }
         Err(err) => {
             logger::log(logger::Header::ERROR, &err.to_string());
-            return HttpResponse::InternalServerError().finish();
-        }
-    };
-
-    let rows = conn.query(
-        "SELECT id, name, password FROM users WHERE name = $1;",
-        &[&req.name]
-    ).await.unwrap();
-
-    if rows.is_empty() {
-        return HttpResponse::Unauthorized().finish();
-    }
-
-    let password: String = rows.get(0).unwrap().get("password");
-    let id: String = rows.get(0).unwrap().get("id");
-
-    let argon2 = Argon2::default();
-    let parsed_hash = match PasswordHash::new(&password) {
-        Ok(hash) => hash,
-        Err(_) => {
-            logger::log(logger::Header::ERROR, "Failed hashing a password");
-            return HttpResponse::InternalServerError().finish();
-        }
-    };
-
-    // パスワードが有効か判定
-    match argon2.verify_password(&req.password.as_bytes(), &parsed_hash) {
-        Ok(_) => {
-            // 有効の場合、トークンを生成
-            match jwt::create_token(&req.name, &id) {
-                Ok(token) => {
-                    // ユーザー情報を作成
-                    let user_data = User {
-                        id,
-                        name: req.name.clone(),
-                        token,
-                    };
-                    return HttpResponse::Ok().json(user_data);
-                },
-                Err(err) => {
-                    logger::log(logger::Header::ERROR, &err.to_string());
-                    return HttpResponse::InternalServerError().finish();
-                },
-            }
-        },
-        Err(err) => {
-            logger::log(logger::Header::ERROR, &err.to_string());
-            return HttpResponse::new(StatusCode::UNAUTHORIZED);
+            HttpResponse::InternalServerError().finish()
         }
     }
 }
