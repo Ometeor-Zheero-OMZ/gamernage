@@ -1,28 +1,47 @@
-use async_trait::async_trait;
 use std::time::SystemTime;
-use chrono::NaiveDateTime;
-use tokio_postgres::{Transaction, Error, NoTls};
-use bb8_postgres::{PostgresConnectionManager, bb8::Pool};
 
-use crate::db::models::todo::{TodoItem, RequestCreateTodoItem, ResponseCreateTodoItem};
+use async_trait::async_trait;
+use chrono::NaiveDateTime;
+use tokio_postgres::{Transaction, NoTls};
+use bb8_postgres::{PostgresConnectionManager, bb8::Pool};
+use crate::db::models::todo::{CompleteTodoItem, DeleteTodoItem, RequestCreateTodoItem, ResponseCreateTodoItem, TodoItem, UpdateTodoItem};
+use crate::errors::todo_error::TodoError;
 
 #[async_trait]
 pub trait TodoRepository: Send + Sync {
-    async fn get_todos(
-        &self,
+    async fn get_todos(&self,
         user_id: String,
         tx: &mut Transaction<'_>
-    ) -> Result<Vec<TodoItem>, Error>;
+    ) -> Result<Vec<TodoItem>, TodoError>;
 
     async fn create_todo(
         &self,
         user_id: String,
         todo_req: &RequestCreateTodoItem,
         tx: &mut Transaction<'_>
-    ) -> Result<ResponseCreateTodoItem, Error>;
+    ) -> Result<ResponseCreateTodoItem, TodoError>;
+
+    async fn update_todo(
+        &self,
+        todo_req: &UpdateTodoItem,
+        tx: &mut Transaction<'_>
+    ) -> Result<(), TodoError>;
+
+    async fn delete_todo(
+        &self,
+        todo_req: &DeleteTodoItem,
+        tx: &mut Transaction<'_>
+    ) -> Result<(), TodoError>;
+    
+    async fn complete_todo(
+        &self,
+        todo_req: &CompleteTodoItem,
+        tx: &mut Transaction<'_>
+    ) -> Result<(), TodoError>;
 }
 
 pub struct TodoRepositoryImpl {
+    #[allow(dead_code)]
     pool: Pool<PostgresConnectionManager<NoTls>>,
 }
 
@@ -38,7 +57,7 @@ impl TodoRepository for TodoRepositoryImpl {
         &self,
         user_id: String,
         tx: &mut Transaction<'_>
-    ) -> Result<Vec<TodoItem>, Error> {
+    ) -> Result<Vec<TodoItem>, TodoError> {
         let rows = tx.query(
             r#"
             SELECT *
@@ -80,7 +99,7 @@ impl TodoRepository for TodoRepositoryImpl {
         user_id: String,
         todo_req: &RequestCreateTodoItem,
         tx: &mut Transaction<'_>
-    ) -> Result<ResponseCreateTodoItem, Error> {
+    ) -> Result<ResponseCreateTodoItem, TodoError> {
         let row = tx.query_one(
             r#"
                 INSERT INTO todos (user_id, title, description, is_completed)
@@ -99,5 +118,71 @@ impl TodoRepository for TodoRepositoryImpl {
             description: row.get("description"),
             is_completed: row.get("is_completed")
         })
+    }
+
+    async fn delete_todo(
+        &self,
+        todo_req: &DeleteTodoItem,
+        tx: &mut Transaction<'_>
+    ) -> Result<(), TodoError> {
+        tx.execute(
+            r#"
+            UPDATE todos
+            SET deleted_at = CURRENT_TIMESTAMP
+            WHERE id = $1
+            "#,
+            &[&todo_req.id]
+        ).await?;
+
+        Ok(())
+    }
+
+    async fn update_todo(
+        &self,
+        todo_req: &UpdateTodoItem,
+        tx: &mut Transaction<'_>
+    ) -> Result<(), TodoError> {
+        tx.execute(
+            r#"
+            UPDATE
+                todos
+            SET
+                title = $2,
+                description = $3,
+                is_completed = $4,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE
+                id = $1
+            "#,
+            &[
+                &todo_req.id,
+                &todo_req.title,
+                &todo_req.description,
+                &todo_req.is_completed
+            ]
+        ).await?;
+
+        Ok(())
+    }
+
+    async fn complete_todo(
+        &self,
+        todo_req: &CompleteTodoItem,
+        tx: &mut Transaction<'_>
+    ) -> Result<(), TodoError> {
+        tx.execute(
+            r#"
+            UPDATE
+                todos
+            SET
+                deleted_at = CURRENT_TIMESTAMP,
+                is_completed = true
+            WHERE
+                id = $1
+            "#,
+            &[&todo_req.id]
+        ).await?;
+
+        Ok(())
     }
 }
