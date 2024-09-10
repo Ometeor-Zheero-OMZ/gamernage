@@ -1,3 +1,4 @@
 pub mod pool;
-pub mod model;
+pub mod models;
+pub mod repositories;
 mod config;

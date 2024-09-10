@@ -1,7 +1,6 @@
 pub mod handler;
-pub mod middleware;
-mod controller;
-mod jwt;
-mod model;
-mod service;
-mod util;
+pub mod middlewares;
+pub mod jwt;
+pub mod services;
+mod controllers;
+mod utils;

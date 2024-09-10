@@ -3,7 +3,7 @@ use jsonwebtoken::{encode, decode, Header, Algorithm, EncodingKey, DecodingKey, 
 use serde::{Serialize, Deserialize};
 use std::time::{SystemTime, Duration};
 
-use crate::api::util::message::SVR_MSG;
+use crate::api::utils::message::SVR_MSG;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Claims {

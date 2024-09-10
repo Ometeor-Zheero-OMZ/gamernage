@@ -1,17 +1,23 @@
-import OutlineButton from "@/components/ui/OutlineButton";
-import SimpleColorfulButton from "@/components/ui/SimpleColorfulButton";
 import { FaLocationArrow } from "react-icons/fa6";
-import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
 import { useRouter } from "next/router";
-import { ERROR_MESSAGES } from "@/constants/message";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import Navbar from "@/components/Navbar";
+import Cta from "@/components/Cta";
+import Footer from "@/components/Footer";
 import SignupModal from "@/components/Modal/SignupModal";
+import OutlineButton from "@/components/ui/OutlineButton";
+import SimpleColorfulButton from "@/components/ui/SimpleColorfulButton";
+import { Toaster } from "@/components/ui/Toaster";
+import Head from "next/head";
 
 export default function Home() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isSignupVisible, setIsSignupVisible] = useState(false);
   const router = useRouter();
   const { guestLogin } = useAuth();
+  const { toast } = useToast();
 
   const handleGuestLogin = async () => {
     setIsLoggingIn(true);
@@ -19,9 +25,18 @@ export default function Home() {
     setIsLoggingIn(false);
 
     if (isSuccess) {
-      router.push("/index");
+      router.push("/gamission");
     } else {
-      alert(ERROR_MESSAGES.LOGIN_FAILED_MESSAGE);
+      toast({
+        title: "Authentication Failure",
+        description: "Failed to login. Please try again.",
+        variant: "destructive",
+        style: {
+          borderColor: "#eb3939",
+          backgroundColor: "#eb3939",
+          boxShadow: "0 10px 15px rgba(0, 0, 0, 0.3)",
+        },
+      });
     }
   };
 
@@ -35,6 +50,11 @@ export default function Home() {
 
   return (
     <>
+      <Head>
+        <title>Ataria - Game community & Game Training Menu</title>
+      </Head>
+
+      <Navbar />
       {/* Hero Container */}
       <div
         className="w-full h-screen bg-cover bg-center bg-no-repeat overflow-hidden relative"
@@ -65,9 +85,12 @@ export default function Home() {
           />
         </div>
       </div>
+      <Toaster />
 
-      {/* モーダルを表示 */}
       <SignupModal isVisible={isSignupVisible} onClose={handleCloseSignup} />
+
+      <Cta />
+      <Footer />
     </>
   );
 }

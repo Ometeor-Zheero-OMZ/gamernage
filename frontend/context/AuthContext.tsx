@@ -5,50 +5,29 @@ import {
   ERROR_MESSAGES,
   PG_ERROR_MESSAGES,
 } from "@/constants/message";
+import {
+  AuthContextType,
+  LoginRequest,
+  SignupRequest,
+  User,
+} from "@/types/type";
 import axios from "axios";
-import React, {
+import {
+  FC,
   createContext,
   useContext,
   useState,
   useEffect,
   ReactNode,
 } from "react";
-
-type User = {
-  id: number;
-  name: string;
-  token: string;
-};
-
-type SignupRequest = {
-  name: string;
-  email: string;
-  password: string;
-};
-
-type LoginRequest = {
-  name: string;
-  password: string;
-};
-
-type AuthContextType = {
-  user: User | null;
-  setUser: React.Dispatch<React.SetStateAction<User | null>>;
-  loading: boolean;
-  signup: (name: string, email: string, password: string) => Promise<boolean>;
-  verifyEmail: (token: string) => Promise<boolean>;
-  login: (name: string, password: string) => Promise<boolean>;
-  logout: () => Promise<boolean>;
-  guestLogin: () => Promise<boolean>;
-};
+import { useToast } from "@/hooks/use-toast";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({
-  children,
-}) => {
+export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   const signup = async (name: string, email: string, password: string) => {
     const signupRequest: SignupRequest = { name, email, password };
@@ -56,17 +35,55 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     try {
       const response = await axios.post("/api/auth/signup", signupRequest);
 
-      if (response.status !== 200) {
-        console.error("サインアップに失敗しました。");
-        return false;
-      }
-
-      console.log("確認メールを送信しました。");
-
       // サインアップ成功後の処理
       return true;
     } catch (error) {
-      console.error("サインアップエラー:", error);
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 409) {
+          toast({
+            title: "Authentication Failure",
+            description:
+              "The name you entered is already in use. Please choose a different name.",
+            variant: "destructive",
+            style: {
+              borderColor: "#eb3939",
+              backgroundColor: "#eb3939",
+              boxShadow: "0 10px 15px rgba(0, 0, 0, 0.3)",
+            },
+          });
+
+          return false;
+        }
+
+        if (error.response?.status === 500) {
+          toast({
+            title: "Server Error",
+            description:
+              "There was a problem with the server. Please try again later.",
+            variant: "destructive",
+            style: {
+              borderColor: "#eb3939",
+              backgroundColor: "#eb3939",
+              boxShadow: "0 10px 15px rgba(0, 0, 0, 0.3)",
+            },
+          });
+
+          return false;
+        }
+      }
+
+      toast({
+        title: "Authentication Failure",
+        description:
+          "A critical issue has occurred on the server, and our development team is currently investigating the cause. We apologize for the inconvenience, but please try again later.",
+        variant: "destructive",
+        style: {
+          borderColor: "#eb3939",
+          backgroundColor: "#eb3939",
+          boxShadow: "0 10px 15px rgba(0, 0, 0, 0.3)",
+        },
+      });
+
       return false;
     }
   };
@@ -98,16 +115,42 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       const loginUserData = response.data;
       loginUserData.sub = loginUserData.name;
       loginUserData.id = loginUserData.id;
-      console.log(loginUserData);
 
-      // ローカルストレージにトークンを保存
       window.localStorage.setItem("login_token", loginUserData.token);
 
-      // ユーザー情報をアプリケーションの状態に設定
       setUser(loginUserData);
       return true;
     } catch (error) {
-      console.error(ERROR_MESSAGES.LOGIN_FAILED_MESSAGE);
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 500) {
+          toast({
+            title: "Server Error",
+            description:
+              "There was a problem with the server. Please try again later.",
+            variant: "destructive",
+            style: {
+              borderColor: "#eb3939",
+              backgroundColor: "#eb3939",
+              boxShadow: "0 10px 15px rgba(0, 0, 0, 0.3)",
+            },
+          });
+
+          return false;
+        }
+      }
+
+      toast({
+        title: "Authentication Failure",
+        description:
+          "A critical issue has occurred on the server, and our development team is currently investigating the cause. We apologize for the inconvenience, but please try again later.",
+        variant: "destructive",
+        style: {
+          borderColor: "#eb3939",
+          backgroundColor: "#eb3939",
+          boxShadow: "0 10px 15px rgba(0, 0, 0, 0.3)",
+        },
+      });
+
       return false;
     }
   };
@@ -127,11 +170,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
       const currentUserData = response.data;
       currentUserData.token = token;
+
       return currentUserData;
-    } catch (error: any) {
-      console.error(
-        DYNAMIC_ERROR_MESSAGES(error).FETCH_CURRENT_USER_FAILED_MESSAGE
-      );
+    } catch (error) {
       return false;
     }
   };
@@ -186,7 +227,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     loadUser();
   }, [setUser, setLoading]);
 
-  const logout = async () => {
+  const signOut = async () => {
     try {
       localStorage.removeItem("login_token");
       setUser(null);
@@ -205,7 +246,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         signup,
         verifyEmail,
         login,
-        logout,
+        signOut,
         guestLogin,
       }}
     >

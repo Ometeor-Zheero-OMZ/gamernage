@@ -1,19 +1,7 @@
-import React, { useState } from "react";
-import { TaskParam } from "@/constants/type";
+import { FC, useState } from "react";
+import { EditModalProps } from "@/types/type";
 
-type EditModalProps = {
-  task: TaskParam;
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (updatedTask: TaskParam) => void;
-};
-
-const EditModal: React.FC<EditModalProps> = ({
-  task,
-  isOpen,
-  onClose,
-  onSave,
-}) => {
+const EditModal: FC<EditModalProps> = ({ task, isOpen, onClose, onSave }) => {
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description);
 

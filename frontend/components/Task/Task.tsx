@@ -1,19 +1,12 @@
-import { TaskParam } from "../../constants/type";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import React, { useState } from "react";
+import { FC, useState } from "react";
 import EditModal from "../Modal/EditModal";
 import Image from "next/image";
 import editIcon from "../../public/img/icon-edit.svg";
+import { TaskParam, TaskProps } from "@/types/type";
 
-type TaskProps = {
-  task: TaskParam;
-  // onUpdateTask: (updatedTask: TaskParam) => void;
-  // onDeleteTask: (taskId: number) => void;
-  // onCompleteTask: (taskId: number) => void;
-};
-
-const Task: React.FC<TaskProps> = ({ task }) => {
+const Task: FC<TaskProps> = ({ task }) => {
   const id = task.id;
   const title = task.title;
 
@@ -28,17 +21,14 @@ const Task: React.FC<TaskProps> = ({ task }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleOpenModal = () => {
-    console.log("called handleOpenModal");
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
-    console.log("called handleCloseModal");
     setIsModalOpen(false);
   };
 
   const handleSave = (updatedTask: TaskParam) => {
-    console.log("called handleSave");
     // ここでタスクの更新
   };
 

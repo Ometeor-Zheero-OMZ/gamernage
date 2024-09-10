@@ -5,22 +5,28 @@ import {
   closestCorners,
   DndContext,
   DragEndEvent,
-  KeyboardSensor,
   PointerSensor,
   TouchSensor,
   UniqueIdentifier,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import axios from "axios";
+import { arrayMove } from "@dnd-kit/sortable";
 
 import Column from "../components/Column/Column";
 import Input from "../components/Input/Input";
-import { TaskParam } from "../constants/type";
+import { TaskParam } from "../types/type";
 import { useRouter } from "next/router";
 import { useAuth } from "@/context/AuthContext";
 import { ERROR_MESSAGES } from "@/constants/message";
+import Navbar from "@/components/Navbar";
+import {
+  addTask,
+  changeTaskStatus,
+  deleteTask,
+  fetchTasks,
+  updateTask,
+} from "@/api/todos";
 
 const Gamission = () => {
   const router = useRouter();
@@ -29,80 +35,63 @@ const Gamission = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // TODO一覧取得
-  const fetchTasks = async () => {
+  useEffect(() => {
+    const getTasks = async () => {
+      if (!loading && !user) {
+        router.push("/");
+        return;
+      }
+
+      if (user) {
+        try {
+          const data = await fetchTasks(user.token);
+          if (data && Array.isArray(data)) {
+            setTasks(data);
+          } else {
+            setError(ERROR_MESSAGES.INVALID_DATA_FORMAT_NOT_ARRAY_MESSAGE);
+          }
+        } catch (err) {
+          setError(ERROR_MESSAGES.FETCH_MISSION_FAILED_MESSAGE);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    getTasks();
+  }, [loading, user, router]);
+
+  const handleAddTask = async (title: string, description: string) => {
     if (!loading && !user) {
-      router.push("/login");
+      router.push("/");
       return;
     }
 
-    if (!loading && user) {
-      setIsLoading(true);
-
+    if (user) {
       try {
-        const response = await axios.get("/api/todos", {
-          headers: { Authorization: `Bearer ${user.token}` },
-        });
+        await addTask(user.token, title, description);
+        const data = await fetchTasks(user.token);
 
-        if (response.data.todos && Array.isArray(response.data.todos)) {
-          setTasks(response.data.todos);
+        if (data && Array.isArray(data)) {
+          setTasks(data);
         } else {
           setError(ERROR_MESSAGES.INVALID_DATA_FORMAT_NOT_ARRAY_MESSAGE);
         }
-      } catch (err) {
-        setError(ERROR_MESSAGES.FETCH_MISSION_FAILED_MESSAGE);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
-
-  useEffect(() => {
-    fetchTasks();
-  }, [loading, user, router]);
-
-  // TODO追加
-  const addTask = async (title: string, description: string) => {
-    console.log("Called addTask");
-
-    if (!loading && !user) {
-      router.push("/login");
-      return;
-    }
-
-    const reqBody = { title, description };
-    if (user) {
-      try {
-        const response = await axios.post("/api/todo", reqBody, {
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        await fetchTasks();
       } catch (err) {
         setError(ERROR_MESSAGES.APPEND_MISSION_FAILED_MESSAGE);
       }
     }
   };
 
-  // TODO更新
-  const updateTask = async (updatedTask: TaskParam) => {
+  const handleUpdateTask = async (updatedTask: TaskParam) => {
     if (!loading && !user) {
-      router.push("/login");
+      router.push("/");
       return;
     }
 
     if (user) {
       try {
-        await axios.post("/api/todo", {
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-            "Content-Type": "application/json",
-          },
-          updatedTask,
-        });
+        await updateTask(user.token, updatedTask);
         setTasks((tasks) =>
           tasks.map((task) => (task.id === updatedTask.id ? updatedTask : task))
         );
@@ -112,22 +101,15 @@ const Gamission = () => {
     }
   };
 
-  // TODO削除
-  const deleteTask = async (taskId: number) => {
+  const handleDeleteTask = async (taskId: number) => {
     if (!loading && !user) {
-      router.push("/login");
+      router.push("/");
       return;
     }
 
     if (user) {
       try {
-        await axios.delete("/api/todo", {
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-            "Content-Type": "application/json",
-          },
-          data: { id: taskId },
-        });
+        await deleteTask(user.token, taskId);
         setTasks((tasks) => tasks.filter((task) => task.id !== taskId));
       } catch (err) {
         setError(ERROR_MESSAGES.DELETE_MISSION_FAILED_MESSAGE);
@@ -135,22 +117,15 @@ const Gamission = () => {
     }
   };
 
-  // TODOステータス更新
-  const changeTaskStatus = async (taskId: number) => {
+  const handleChangeTaskStatus = async (taskId: number) => {
     if (!loading && !user) {
-      router.push("/login");
+      router.push("/");
       return;
     }
 
     if (user) {
       try {
-        await axios.post("/api/todo/complete", {
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-            "Content-Type": "application/json",
-          },
-          id: taskId,
-        });
+        await changeTaskStatus(user.token, taskId);
         setTasks((tasks) =>
           tasks.map((task) =>
             task.id === taskId ? { ...task, is_completed: true } : task
@@ -180,23 +155,29 @@ const Gamission = () => {
     });
   };
 
-  // 現段階でUXの良さが感じられなかったため、下記引数を除外
-  // ミッションを選択し、キーボードのEnterを入力すると、カーソルボタンで↑↓で操作できる
-  // useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   const sensors = useSensors(useSensor(PointerSensor), useSensor(TouchSensor));
 
   return (
-    <div className="w-full h-full flex flex-col items-center gap-12 mt-2.5">
-      <h1>今日のミッション</h1>
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragEnd={handleDragEnd}
-      >
-        <Input onSubmit={addTask} />
-        <Column tasks={tasks} />
-      </DndContext>
-    </div>
+    <>
+      <Navbar />
+      <div className="w-full h-full flex flex-col items-center gap-12 mt-2.5">
+        <h1>今日のミッション</h1>
+        {isLoading ? (
+          <p>Loading...</p>
+        ) : error ? (
+          <p className="text-red-500">{error}</p>
+        ) : (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragEnd={handleDragEnd}
+          >
+            <Input onSubmit={handleAddTask} />
+            <Column tasks={tasks} />
+          </DndContext>
+        )}
+      </div>
+    </>
   );
 };
 
