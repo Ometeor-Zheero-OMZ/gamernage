@@ -20,7 +20,9 @@ jobs:
           cache: "npm"
 
       - name: List Files
-        run: ls -la
+        run: |
+          ls -la
+          ls -la frontend
 
       - name: Cache Node Modules
         uses: actions/cache@v3
@@ -32,7 +34,11 @@ jobs:
             ${{ runner.os }}-build-
 
       - name: Install Dependencies
-        run: cd frontend && npm install
+        run: |
+          cd frontend
+          npm install
 
       - name: Build Application
-        run: cd frontend && npm run build
+        run: |
+          cd frontend
+          npm run build

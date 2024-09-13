@@ -2,9 +2,13 @@ name: Rust
 
 on:
   push:
-    branches: ["main"]
+    branches-ignore:
+      - main
+      - develop
   pull_request:
-    branches: ["main"]
+    branches-ignore:
+      - main
+      - develop
 
 env:
   CARGO_TERM_COLOR: always
