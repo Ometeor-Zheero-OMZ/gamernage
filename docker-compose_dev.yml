@@ -2,6 +2,7 @@ version: "3.9"
 
 services:
   mydb:
+    image: mydb:latest
     build:
       context: .
       dockerfile: ./docker/postgresql/Dockerfile

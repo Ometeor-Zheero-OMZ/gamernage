@@ -21,7 +21,7 @@ use crate::{
         },
         user::User
     },
-    errors::custom_error::AuthError,
+    errors::auth_error::AuthError,
     libraries::logger
 };
 

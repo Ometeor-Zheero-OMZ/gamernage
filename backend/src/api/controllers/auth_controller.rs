@@ -9,7 +9,7 @@ use crate::{
     api::jwt::jwt, db::models::auth::{
         LoginRequest,
         SignupRequest
-    }, errors::custom_error::AuthError, libraries::{
+    }, errors::auth_error::AuthError, libraries::{
         app_state::AppState,
         logger
     }

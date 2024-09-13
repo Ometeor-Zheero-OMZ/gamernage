@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use chrono::NaiveDateTime;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct TodoItem {
     pub id: i32,
     pub user_id: Option<String>,
@@ -23,21 +23,21 @@ pub struct ResponseTodoList {
     pub todos: Vec<TodoItem>,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, PartialEq, Clone)]
 pub struct ResponseCreateTodoItem {
     pub title: String,
     pub description: String,
     pub is_completed: bool,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct RequestCreateTodoItem {
     pub title: String,
     pub description: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct UpdateTodoItem {
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+pub struct RequestUpdateTodoItem {
     pub id: i32,
     pub title: Option<String>,
     pub description: Option<String>,
@@ -45,12 +45,21 @@ pub struct UpdateTodoItem {
     pub updated_at: NaiveDateTime,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct DeleteTodoItem {
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+pub struct ResponseUpdateTodoItem {
+    pub id: i32,
+    pub title: Option<String>,
+    pub description: Option<String>,
+    pub is_completed: Option<bool>,
+    pub updated_at: NaiveDateTime,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+pub struct RequestDeleteTodoItem {
     pub id: i32
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CompleteTodoItem {
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+pub struct RequestCompleteTodoItem {
     pub id: i32
 }

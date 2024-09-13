@@ -39,3 +39,8 @@ colored= "2"
 rand = "0.8"
 lazy_static = "1.4"
 async-trait = "0.1.82"
+validator = { version = "0.18.1", features = ["derive"]}
+regex = "1.10.6"
+
+[dev-dependencies]
+mockall = "0.13.0"
