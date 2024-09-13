@@ -27,6 +27,7 @@ services:
     build:
       context: .
       dockerfile: ./docker/rust/Dockerfile
+    image: myrust:latest
     working_dir: /backend
     expose:
       - "${BACKEND_PORT}"
