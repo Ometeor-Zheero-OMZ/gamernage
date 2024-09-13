@@ -1,6 +1,7 @@
 use async_trait::async_trait;
+use validator::Validate;
 
-use crate::{constants::custom_type::AuthRepositoryArc, db::models::{auth::{LoginRequest, SignupRequest}, user::User}, errors::custom_error::AuthError};
+use crate::{constants::custom_type::AuthRepositoryArc, db::models::{auth::{LoginRequest, SignupRequest}, user::User}, errors::auth_error::AuthError};
 
 #[async_trait]
 pub trait AuthService: Send + Sync {
@@ -30,10 +31,18 @@ impl AuthService for AuthServiceImpl {
     }
 
     async fn signup(&self, req: &SignupRequest) -> Result<(), AuthError> {
+        if let Err(validation_errors) = req.validate() {
+            return Err(AuthError::ValidationError(validation_errors));
+        }
+
         self.auth_repository.signup(req).await
     }
 
     async fn login(&self, req: &LoginRequest) -> Result<Option<User>, AuthError> {
+        if let Err(validation_errors) = req.validate() {
+            return Err(AuthError::ValidationError(validation_errors));
+        }
+
         self.auth_repository.login(req).await
     }
 }

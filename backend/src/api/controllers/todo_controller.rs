@@ -6,9 +6,9 @@ use crate::{
 };
 use crate::db::models::todo::{
     RequestCreateTodoItem,
-    UpdateTodoItem,
-    DeleteTodoItem,
-    CompleteTodoItem
+    RequestUpdateTodoItem,
+    RequestDeleteTodoItem,
+    RequestCompleteTodoItem
 };
 
 /// todo データを取得
@@ -94,7 +94,7 @@ pub async fn create_todo(
 /// データ取得に失敗した場合は、500 ステータスコードを返却
 pub async fn update_todo(
     req: HttpRequest,
-    todo_req: web::Json<UpdateTodoItem>,
+    todo_req: web::Json<RequestUpdateTodoItem>,
     app_state: web::Data<AppState>
 ) -> impl Responder {
     let todo_service = &app_state.todo_service;
@@ -129,7 +129,7 @@ pub async fn update_todo(
 /// データ取得に失敗した場合は、500 ステータスコードを返却
 pub async fn delete_todo(
     req: HttpRequest,
-    todo_req: web::Json<DeleteTodoItem>,
+    todo_req: web::Json<RequestDeleteTodoItem>,
     app_state: web::Data<AppState>
 ) -> impl Responder {
     let todo_service = &app_state.todo_service;
@@ -164,7 +164,7 @@ pub async fn delete_todo(
 /// データ取得に失敗した場合は、500 ステータスコードを返却
 pub async fn complete_todo(
     req: HttpRequest,
-    todo_req: web::Json<CompleteTodoItem>,
+    todo_req: web::Json<RequestCompleteTodoItem>,
     app_state: web::Data<AppState>
 ) -> impl Responder {
     let todo_service = &app_state.todo_service;
