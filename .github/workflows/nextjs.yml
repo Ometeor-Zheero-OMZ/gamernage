@@ -1,4 +1,5 @@
 name: Next.js Test
+
 on:
   push:
     branches-ignore:
@@ -25,13 +26,13 @@ jobs:
         uses: actions/cache@v3
         id: cache-node-modules
         with:
-          path: node_modules
-          key: ${{ runner.os }}-build-${{ hashFiles('package-lock.json') }}
+          path: frontend/node_modules
+          key: ${{ runner.os }}-build-${{ hashFiles('frontend/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-build-
 
       - name: Install Dependencies
-        run: npm install
+        run: cd frontend && npm install
 
       - name: Build Application
-        run: npm run build
+        run: cd frontend && npm run build

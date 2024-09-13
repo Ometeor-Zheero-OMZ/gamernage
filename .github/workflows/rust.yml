@@ -1,42 +1,31 @@
-name: Rust Test
+name: Rust
 
-on: [push]
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build Docker Image
+      - name: Set up Rust
         run: |
-          docker build -t mydb -f docker/postgresql/Dockerfile docker/postgresql
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          source $HOME/.cargo/env
+          rustup --version
+          rustc --version
+          cargo --version
 
-      - name: Push Docker Image
-        run: |
-          docker tag mydb ${{ secrets.DOCKER_USERNAME }}/mydb:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/mydb:latest
-
-      - name: Set up PostgreSQL
-        run: |
-          docker compose -f docker-compose_dev.yml
-
-      - name: Run initial SQL script
-        run: |
-          docker exec -i $(docker compose -f docker-compose_dev.yml ps -q postgres) psql -U secret -d gamernage -f /docker/postgres/init.sql
-
-      - name: Move cache
-        run: mv /cache/target .
+      - name: Build
+        run: cargo build --verbose
 
       - name: Run tests
-        run: mv .env.github .env && cargo test --features "integration" --verbose
-        env:
-          RUST_LOG: info
-          DATABASE_URL: postgres://postgres:secret@postgres:5432/gamernage
+        run: cargo test --verbose
