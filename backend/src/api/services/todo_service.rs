@@ -4,7 +4,7 @@ use bb8_postgres::PostgresConnectionManager;
 use postgres::NoTls;
 use std::sync::Arc;
 use crate::{api::jwt::jwt::Claims, constants::custom_type::TodoRepositoryArc, db::models::todo::{
-    CompleteTodoItem, DeleteTodoItem, RequestCreateTodoItem, ResponseCreateTodoItem, TodoItem, UpdateTodoItem
+    RequestCompleteTodoItem, RequestDeleteTodoItem, RequestCreateTodoItem, ResponseCreateTodoItem, TodoItem, RequestUpdateTodoItem
 }, errors::todo_error::TodoError};
 
 use super::user_service::get_user_id;
@@ -13,9 +13,9 @@ use super::user_service::get_user_id;
 pub trait TodoService: Send + Sync {
     async fn get_todos(&self, user: Claims) -> Result<Vec<TodoItem>, TodoError>;
     async fn create_todo(&self, user: Claims, todo_req: &RequestCreateTodoItem) -> Result<ResponseCreateTodoItem, TodoError>;
-    async fn update_todo(&self, user: Claims, todo_req: &UpdateTodoItem) -> Result<(), TodoError>;
-    async fn delete_todo(&self, user: Claims, todo_req: &DeleteTodoItem) -> Result<(), TodoError>;
-    async fn complete_todo(&self, user: Claims, todo_req: &CompleteTodoItem) -> Result<(), TodoError>;
+    async fn update_todo(&self, user: Claims, todo_req: &RequestUpdateTodoItem) -> Result<(), TodoError>;
+    async fn delete_todo(&self, user: Claims, todo_req: &RequestDeleteTodoItem) -> Result<(), TodoError>;
+    async fn complete_todo(&self, user: Claims, todo_req: &RequestCompleteTodoItem) -> Result<(), TodoError>;
 }
 
 pub struct TodoServiceImpl {
@@ -79,7 +79,7 @@ impl TodoService for TodoServiceImpl {
         }
     }
     
-    async fn update_todo(&self, user: Claims, todo_req: &UpdateTodoItem) -> Result<(), TodoError> {
+    async fn update_todo(&self, user: Claims, todo_req: &RequestUpdateTodoItem) -> Result<(), TodoError> {
         let todo_repository = self.todo_repository.clone();
         let pool = self.pool.clone();
         
@@ -103,7 +103,7 @@ impl TodoService for TodoServiceImpl {
         }
     }
     
-    async fn delete_todo(&self, user: Claims, todo_req: &DeleteTodoItem) -> Result<(), TodoError> {
+    async fn delete_todo(&self, user: Claims, todo_req: &RequestDeleteTodoItem) -> Result<(), TodoError> {
         let todo_repository = self.todo_repository.clone();
         let pool = self.pool.clone();
         
@@ -127,7 +127,7 @@ impl TodoService for TodoServiceImpl {
         }
     }
     
-    async fn complete_todo(&self, user: Claims, todo_req: &CompleteTodoItem) -> Result<(), TodoError> {
+    async fn complete_todo(&self, user: Claims, todo_req: &RequestCompleteTodoItem) -> Result<(), TodoError> {
         let todo_repository = self.todo_repository.clone();
         let pool = self.pool.clone();
         

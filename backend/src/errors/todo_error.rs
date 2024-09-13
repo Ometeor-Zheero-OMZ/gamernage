@@ -6,7 +6,7 @@ use jsonwebtoken;
 
 #[derive(Debug)]
 pub enum TodoError {
-    DatabaseError(tokio_postgres::Error),
+    DatabaseError(String),
     PoolError(bb8::RunError<tokio_postgres::Error>),
     HashingError(argon2::password_hash::Error),
     TokenCreationError(jsonwebtoken::errors::Error),
@@ -27,7 +27,7 @@ impl std::error::Error for TodoError {}
 
 impl From<tokio_postgres::Error> for TodoError {
     fn from(error: tokio_postgres::Error) -> Self {
-        TodoError::DatabaseError(error)
+        TodoError::DatabaseError(error.to_string())
     }
 }
 

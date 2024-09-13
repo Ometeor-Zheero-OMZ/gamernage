@@ -3,7 +3,7 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio_postgres::{Transaction, NoTls};
 use bb8_postgres::{PostgresConnectionManager, bb8::Pool};
-use crate::db::models::todo::{CompleteTodoItem, DeleteTodoItem, RequestCreateTodoItem, ResponseCreateTodoItem, TodoItem, UpdateTodoItem};
+use crate::db::models::todo::{RequestCompleteTodoItem, RequestDeleteTodoItem, RequestCreateTodoItem, ResponseCreateTodoItem, TodoItem, RequestUpdateTodoItem};
 use crate::errors::todo_error::TodoError;
 
 #[async_trait]
@@ -22,19 +22,19 @@ pub trait TodoRepository: Send + Sync {
 
     async fn update_todo(
         &self,
-        todo_req: &UpdateTodoItem,
+        todo_req: &RequestUpdateTodoItem,
         tx: &mut Transaction<'_>
     ) -> Result<(), TodoError>;
 
     async fn delete_todo(
         &self,
-        todo_req: &DeleteTodoItem,
+        todo_req: &RequestDeleteTodoItem,
         tx: &mut Transaction<'_>
     ) -> Result<(), TodoError>;
     
     async fn complete_todo(
         &self,
-        todo_req: &CompleteTodoItem,
+        todo_req: &RequestCompleteTodoItem,
         tx: &mut Transaction<'_>
     ) -> Result<(), TodoError>;
 }
@@ -123,7 +123,7 @@ impl TodoRepository for TodoRepositoryImpl {
 
     async fn delete_todo(
         &self,
-        todo_req: &DeleteTodoItem,
+        todo_req: &RequestDeleteTodoItem,
         tx: &mut Transaction<'_>
     ) -> Result<(), TodoError> {
         tx.execute(
@@ -140,7 +140,7 @@ impl TodoRepository for TodoRepositoryImpl {
 
     async fn update_todo(
         &self,
-        todo_req: &UpdateTodoItem,
+        todo_req: &RequestUpdateTodoItem,
         tx: &mut Transaction<'_>
     ) -> Result<(), TodoError> {
         tx.execute(
@@ -168,7 +168,7 @@ impl TodoRepository for TodoRepositoryImpl {
 
     async fn complete_todo(
         &self,
-        todo_req: &CompleteTodoItem,
+        todo_req: &RequestCompleteTodoItem,
         tx: &mut Transaction<'_>
     ) -> Result<(), TodoError> {
         tx.execute(

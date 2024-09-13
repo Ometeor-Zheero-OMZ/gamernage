@@ -10,6 +10,7 @@ pub enum AuthError {
     PoolError(bb8::RunError<tokio_postgres::Error>),
     HashingError(argon2::password_hash::Error),
     TokenCreationError(jsonwebtoken::errors::Error),
+    ValidationError(validator::ValidationErrors)
 }
 
 impl fmt::Display for AuthError {
@@ -19,6 +20,7 @@ impl fmt::Display for AuthError {
             AuthError::PoolError(err) => write!(f, "Pool error: {}", err),
             AuthError::HashingError(err) => write!(f, "Password hashing error: {}", err),
             AuthError::TokenCreationError(err) => write!(f, "JWT error: {}", err),
+            AuthError::ValidationError(err) => write!(f, "Validation error: {}", err),
         }
     }
 }
@@ -46,5 +48,11 @@ impl From<argon2::password_hash::Error> for AuthError {
 impl From<jsonwebtoken::errors::Error> for AuthError {
     fn from(error: jsonwebtoken::errors::Error) -> Self {
         AuthError::TokenCreationError(error)
+    }
+}
+
+impl From<validator::ValidationErrors> for AuthError {
+    fn from(error: validator::ValidationErrors) -> Self {
+        AuthError::ValidationError(error)
     }
 }
