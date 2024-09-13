@@ -17,7 +17,7 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t mydb ./docker/postgresql/Dockerfile
+          docker build -t mydb -f docker/postgresql/Dockerfile docker/postgresql
 
       - name: Push Docker Image
         run: |
