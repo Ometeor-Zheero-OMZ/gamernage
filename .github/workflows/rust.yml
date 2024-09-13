@@ -1,0 +1,45 @@
+name: Rust Test
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: ataria/web-app
+    services:
+      postgres:
+        image: postgres:13-alpine
+        env:
+          POSTGRES_USER: secret
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gamernage
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PostgreSQL
+        run: |
+          docker compose -f docker-compose_dev.yml
+
+      - name: Run initial SQL script
+        run: |
+          docker exec -i $(docker compose -f docker-compose_dev.yml ps -q postgres) psql -U secret -d gamernage -f /docker/postgres/init.sql
+
+      - name: Move cache
+        run: mv /cache/target .
+
+      # 使用するORMを模索中のためコメントアウト diesel or SeaORM
+      #   - name: Run migrations
+      #     run: diesel migration run
+      #     env:
+      #       DATABASE_URL: postgres://postgres:secret@postgres:5432/gamernage
+
+      - name: Run tests
+        run: mv .env.github .env && cargo test --features "integration" --verbose
+        env:
+          RUST_LOG: info
+          DATABASE_URL: postgres://postgres:secret@postgres:5432/gamernage
