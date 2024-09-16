@@ -1,3 +1,24 @@
+//! # TODO Controller
+//!
+//! This module provides controller functions related to managing TODO items.
+//!
+//! ## Functions
+//!
+//! - `get_todos`: Retrieves all TODO data for the authenticated user.
+//! - `create_todo`: Creates a new TODO item.
+//! - `update_todo`: Updates an existing TODO item.
+//! - `delete_todo`: Soft deletes a TODO item.
+//! - `complete_todo`: Marks a TODO item as completed.
+//!
+//! ## Dependencies
+//!
+//! - `actix_web`: Web application framework.
+//! - `reqwest`: HTTP client library.
+//! - `crate::api::jwt::jwt`: JWT creation and verification functions.
+//! - `crate::db::models::todo::{RequestCreateTodoItem, RequestUpdateTodoItem, RequestDeleteTodoItem, RequestCompleteTodoItem}`: Models for TODO item requests.
+//! - `crate::libraries::{app_state::AppState, logger}`: Application state and logging functions.
+
+
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use reqwest::StatusCode;
 use crate::{
@@ -11,52 +32,71 @@ use crate::db::models::todo::{
     RequestCompleteTodoItem
 };
 
-/// todo データを取得
+/// Handles retrieval of all TODO items for the authenticated user.
 /// 
-/// # 引数
+/// # Arguments
 /// 
-/// * `req` - リクエストパラメーター
-/// * `pool` - DBプール
+/// * `req` - HTTP request object (`HttpRequest` type) containing request information.
+/// * `app_state` - Application state service (`web::Data<AppState>` type) managing application state and dependencies.
 /// 
-/// # 戻り値
+/// # Returns
 /// 
-/// ユーザー情報に紐づく todo データを取得し返却
-/// データ取得に失敗した場合は、500 ステータスコードを返却
+/// * `impl Responder` - Returns TODO data in JSON format if successful. Returns HTTP status code 401 UNAUTHORIZED if unauthorized.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// web::scope("/api")
+///     .route("/todos", web::get().to(todo_controller::get_todos))
+/// ```
+/// 
+/// This example routes GET requests to `/api/todos` to the `get_todos` function, which retrieves TODO data by `user_id`.
+/// If successful, it returns the data with HTTP status code 200 OK.
 pub async fn get_todos(
     req: HttpRequest,
     app_state: web::Data<AppState>
 ) -> impl Responder {
-    let todo_service =&app_state.todo_service;
-    
+    let todo_service = &app_state.todo_service;
     let user = jwt::verify(&req);
 
     match user {
         Ok(user_data) => match todo_service.get_todos(user_data).await {
-            Ok(todos) => HttpResponse::Ok().json(todos),
-            Err(err) => {
-                logger::log(logger::Header::ERROR, &err.to_string());
+            Ok(todos) => {
+                HttpResponse::Ok().json(todos)
+            },
+            Err(todo_error) => {
+                logger::log(logger::Header::ERROR, &format!("[todo_controller] - [get_todos] - todo_error = {}", todo_error));
                 HttpResponse::InternalServerError().finish()
             }
         },
         Err(err) => {
-            logger::log(logger::Header::ERROR, &err.to_string());
+            logger::log(logger::Header::ERROR, &format!("[todo_controller] - [get_todos] - err = {}", err));
             HttpResponse::new(StatusCode::UNAUTHORIZED)
         }
     }
 }
 
-/// todo データを作成
+/// Handles creation of a new TODO item.
 /// 
-/// # 引数
+/// # Arguments
 /// 
-/// * `req` - リクエストパラメーター：　認証済みユーザー情報
-/// * `todo_req` - 作成する todo データ
-/// * `pool` - DBプール
+/// * `req` - HTTP request object (`HttpRequest` type) containing request information.
+/// * `todo_req` - Request body object (`web::Json<RequestCreateTodoItem>` type) containing TODO item details.
+/// * `app_state` - Application state service (`web::Data<AppState>` type) managing application state and dependencies.
 /// 
-/// # 戻り値
+/// # Returns
 /// 
-/// ユーザー情報に紐づく todo データを作成し、RETURNING値を返却
-/// データ取得に失敗した場合は、500 ステータスコードを返却
+/// * `impl Responder` - Returns the created TODO item data in JSON format if successful. Returns HTTP status code 401 UNAUTHORIZED if unauthorized.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// web::scope("/api")
+///     .route("/todos", web::post().to(todo_controller::create_todo))
+/// ```
+/// 
+/// This example routes POST requests to `/api/todos` to the `create_todo` function, which creates a new TODO item.
+/// If successful, it returns the created TODO item data with HTTP status code 200 OK.
 pub async fn create_todo(
     req: HttpRequest,
     todo_req: web::Json<RequestCreateTodoItem>,
@@ -68,30 +108,29 @@ pub async fn create_todo(
     match user {
         Ok(user_data) => match todo_service.create_todo(user_data, &todo_req).await {
             Ok(response) => HttpResponse::Ok().json(response),
-            Err(err) => {
-                logger::log(logger::Header::ERROR, &err.to_string());
+            Err(todo_error) => {
+                logger::log(logger::Header::ERROR, &format!("[todo_controller] - [create_todo] - todo_error = {}", todo_error));
                 HttpResponse::InternalServerError().finish()
             }
         },
         Err(err) => {
-            logger::log(logger::Header::ERROR, &err.to_string());
+            logger::log(logger::Header::ERROR, &format!("[todo_controller] - [create_todo] - err = {}", err));
             HttpResponse::new(StatusCode::UNAUTHORIZED)
         }
     }
 }
 
-/// todo データを更新
+/// Updates an existing TODO item.
 /// 
-/// # 引数
+/// # Arguments
 /// 
-/// * `req` - リクエストパラメーター：　認証済みユーザー情報
-/// * `todo_req` - 更新する todo データ
-/// * `pool` - DBプール
+/// * `req` - HTTP request object (`HttpRequest` type) containing request information.
+/// * `todo_req` - Request body object (`web::Json<RequestUpdateTodoItem>` type) containing updated TODO item details.
+/// * `app_state` - Application state service (`web::Data<AppState>` type) managing application state and dependencies.
 /// 
-/// # 戻り値
+/// # Returns
 /// 
-/// 200 ステータスコードを返却
-/// データ取得に失敗した場合は、500 ステータスコードを返却
+/// * `impl Responder` - Returns HTTP status code 200 OK if successful. Returns HTTP status code 500 INTERNAL SERVER ERROR if an error occurs.
 pub async fn update_todo(
     req: HttpRequest,
     todo_req: web::Json<RequestUpdateTodoItem>,
@@ -103,30 +142,29 @@ pub async fn update_todo(
     match user {
         Ok(user_data) => match todo_service.update_todo(user_data, &todo_req).await {
             Ok(()) => HttpResponse::Ok().finish(),
-            Err(err) => {
-                logger::log(logger::Header::ERROR, &err.to_string());
+            Err(todo_error) => {
+                logger::log(logger::Header::ERROR, &format!("[todo_controller] - [delete_todo] - todo_error = {}", todo_error));
                 HttpResponse::InternalServerError().finish()
             }
         },
         Err(err) => {
-            logger::log(logger::Header::ERROR, &err.to_string());
+            logger::log(logger::Header::ERROR, &format!("[todo_controller] - [delete_todo] - err = {}", err));
             HttpResponse::new(StatusCode::UNAUTHORIZED)
         }
     }
 }
 
-/// todo データを論理削除
+/// Soft deletes a TODO item.
 /// 
-/// # 引数
+/// # Arguments
 /// 
-/// * `req` - リクエストパラメーター：　認証済みユーザー情報
-/// * `todo_req` - 削除する todo データの id
-/// * `pool` - DBプール
+/// * `req` - HTTP request object (`HttpRequest` type) containing request information.
+/// * `todo_req` - Request body object (`web::Json<RequestDeleteTodoItem>` type) containing the ID of the TODO item to delete.
+/// * `app_state` - Application state service (`web::Data<AppState>` type) managing application state and dependencies.
 /// 
-/// # 戻り値
+/// # Returns
 /// 
-/// 200 ステータスコードを返却
-/// データ取得に失敗した場合は、500 ステータスコードを返却
+/// * `impl Responder` - Returns HTTP status code 200 OK if successful. Returns HTTP status code 500 INTERNAL SERVER ERROR if an error occurs.
 pub async fn delete_todo(
     req: HttpRequest,
     todo_req: web::Json<RequestDeleteTodoItem>,
@@ -138,30 +176,29 @@ pub async fn delete_todo(
     match user {
         Ok(user_data) => match todo_service.delete_todo(user_data, &todo_req).await {
             Ok(()) => HttpResponse::Ok().finish(),
-            Err(err) => {
-                logger::log(logger::Header::ERROR, &err.to_string());
+            Err(todo_error) => {
+                logger::log(logger::Header::ERROR, &format!("[todo_controller] - [delete_todo] - todo_error = {}", todo_error));
                 HttpResponse::InternalServerError().finish()
             }
         },
         Err(err) => {
-            logger::log(logger::Header::ERROR, &err.to_string());
+            logger::log(logger::Header::ERROR, &format!("[todo_controller] - [delete_todo] - err = {}", err));
             HttpResponse::new(StatusCode::UNAUTHORIZED)
         }
     }
 }
 
-/// todo ステータスを更新
+/// Marks a TODO item as completed.
 /// 
-/// # 引数
+/// # Arguments
 /// 
-/// * `req` - リクエストパラメーター：　認証済みユーザー情報
-/// * `todo_req` - 更新する todo データの user_id
-/// * `pool` - DBプール
+/// * `req` - HTTP request object (`HttpRequest` type) containing request information.
+/// * `todo_req` - Request body object (`web::Json<RequestCompleteTodoItem>` type) containing the ID of the TODO item to complete.
+/// * `app_state` - Application state service (`web::Data<AppState>` type) managing application state and dependencies.
 /// 
-/// # 戻り値
+/// # Returns
 /// 
-/// 200 ステータスコードを返却
-/// データ取得に失敗した場合は、500 ステータスコードを返却
+/// * `impl Responder` - Returns HTTP status code 200 OK if successful. Returns HTTP status code 500 INTERNAL SERVER ERROR if an error occurs.
 pub async fn complete_todo(
     req: HttpRequest,
     todo_req: web::Json<RequestCompleteTodoItem>,
@@ -173,13 +210,13 @@ pub async fn complete_todo(
     match user {
         Ok(user_data) => match todo_service.complete_todo(user_data, &todo_req).await {
             Ok(()) => HttpResponse::Ok().finish(),
-            Err(err) => {
-                logger::log(logger::Header::ERROR, &err.to_string());
+            Err(todo_error) => {
+                logger::log(logger::Header::ERROR, &format!("[todo_controller] - [delete_todo] - todo_error = {}", todo_error));
                 HttpResponse::InternalServerError().finish()
             }
         },
         Err(err) => {
-            logger::log(logger::Header::ERROR, &err.to_string());
+            logger::log(logger::Header::ERROR, &format!("[todo_controller] - [delete_todo] - err = {}", err));
             HttpResponse::new(StatusCode::UNAUTHORIZED)
         }
     }

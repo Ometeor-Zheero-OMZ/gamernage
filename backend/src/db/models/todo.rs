@@ -1,11 +1,13 @@
+//! TODO Model
+
 use serde::{Deserialize, Serialize};
 use chrono::NaiveDateTime;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct TodoItem {
     pub id: i32,
-    pub user_id: Option<String>,
-    pub game_id: Option<String>,
+    pub user_id: Option<i32>,
+    pub game_id: Option<i32>,
     pub title: String,
     pub description: String,
     pub is_completed: bool,
