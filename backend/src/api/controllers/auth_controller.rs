@@ -1,33 +1,49 @@
+//! # Authentication Controller
+//!
+//! This module provides controller functions related to user authentication.
+//!
+//! ## Functions
+//!
+//! - `guest_login`: Handles guest login.
+//! - `signup`: Handles user signup.
+//! - `login`: Handles user login.
+//! - `current_user`: Returns the currently authenticated user's data.
+//!
+//! ## Dependencies
+//!
+//! - `actix_web`: Web application framework.
+//! - `postgres`: PostgreSQL database connection.
+//! - `crate::api::jwt::jwt`: JWT creation and verification functions.
+//! - `crate::db::models::auth::{LoginRequest, SignupRequest}`: Authentication request models.
+//! - `crate::errors::auth_error::AuthError`: Authentication errors.
+//! - `crate::libraries::{app_state::AppState, logger}`: Application state and logging functions.
+
+
 use actix_web::{
     HttpResponse,
     Responder,
     HttpRequest,
-    web, http::StatusCode
+    web,
+    http::StatusCode
 };
 use postgres::error::SqlState;
 use crate::{
-    api::jwt::jwt, db::models::auth::{
-        LoginRequest,
-        SignupRequest
-    }, errors::auth_error::AuthError, libraries::{
-        app_state::AppState,
-        logger
-    }
+    api::jwt::jwt,
+    db::models::auth::{LoginRequest, SignupRequest},
+    errors::auth_error::AuthError,
+    libraries::{app_state::AppState, logger}
 };
 
-/// ログイン可能なユーザーかどうかを判定
+/// Handles guest login.
 /// 
-/// # 引数
+/// # Arguments
 /// 
-/// * `req` - リクエストパラメーター
-/// * `pool` - DBプール
+/// * `req` - JSON request data of type `LoginRequest`
+/// * `app_state` - Application state
 /// 
-/// # 戻り値
+/// # Returns
 /// 
-/// * `impl Responder` - HTTPレスポンス
-/// 
-/// トークンを生成し、認証済みのユーザーデータを返却
-/// 認証済みでない場合は、401 を返却
+/// Returns the authenticated user data if successful. Returns 401 if unauthorized.
 pub async fn guest_login(
     req: web::Json<LoginRequest>,
     app_state: web::Data<AppState>
@@ -37,26 +53,24 @@ pub async fn guest_login(
     match auth_service.guest_login(&req).await {
         Ok(Some(user_data)) => HttpResponse::Ok().json(user_data),
         Ok(None) => {
-            logger::log(logger::Header::ERROR, "User not found");
             HttpResponse::new(StatusCode::UNAUTHORIZED)
         }
-        Err(err) => {
-            logger::log(logger::Header::ERROR, &err.to_string());
+        Err(_auth_error) => {
             HttpResponse::InternalServerError().finish()
         }
     }
 }
 
-/// サインアップ処理
+/// Handles user signup.
 /// 
-/// # 引数
+/// # Arguments
 /// 
-/// * `req` - リクエストパラメーター
-/// * `pool` - DBプール
+/// * `req` - JSON request data of type `SignupRequest`
+/// * `app_state` - Application state
 /// 
-/// # 戻り値
+/// # Returns
 /// 
-/// トークンを生成し、認証済みのユーザーデータを返却
+/// Returns 200 OK if signup is successful. Returns 409 Conflict if the user already exists.
 pub async fn signup(
     req: web::Json<SignupRequest>,
     app_state: web::Data<AppState>
@@ -71,16 +85,16 @@ pub async fn signup(
         Err(AuthError::DatabaseError(ref err)) => {
             if let Some(db_error) = err.as_db_error() {
                 if db_error.code() == &SqlState::UNIQUE_VIOLATION {
-                    logger::log(logger::Header::ERROR, "name already exists");
+                    logger::log(logger::Header::ERROR, &format!("[auth_controller] - [signup] - [message: {}]", db_error));
                     return HttpResponse::new(StatusCode::CONFLICT);
                 }
             }
 
-            logger::log(logger::Header::ERROR, "database error");
+            logger::log(logger::Header::ERROR, &format!("[auth_controller] - [signup] - [message: other database error]"));
             HttpResponse::InternalServerError().finish()
         }
-        Err(err) => {
-            logger::log(logger::Header::ERROR, &err.to_string());
+        Err(auth_error) => {
+            logger::log(logger::Header::ERROR, &format!("[auth_controller] - [signup] - auth_error = {}", auth_error));
             HttpResponse::InternalServerError().finish()
         }
     }
@@ -130,17 +144,16 @@ pub async fn signup(
 //     }
 // }
 
-/// ログイン処理
+/// Handles user login.
 /// 
-/// # 引数
+/// # Arguments
 /// 
-/// * `req` - リクエストパラメーター
-/// * `pool` - DBプール
+/// * `req` - JSON request data of type `LoginRequest`
+/// * `app_state` - Application state
 /// 
-/// # 戻り値
+/// # Returns
 /// 
-/// トークンを生成し、認証済みのユーザーデータを返却
-/// 認証済みでない場合は、401 を返却
+/// Returns the authenticated user data if successful. Returns 401 if unauthorized.
 pub async fn login(
     req: web::Json<LoginRequest>,
     app_state: web::Data<AppState>
@@ -150,31 +163,31 @@ pub async fn login(
     match auth_service.login(&req).await {
         Ok(Some(user_data)) => HttpResponse::Ok().json(user_data),
         Ok(None) => {
-            logger::log(logger::Header::ERROR, "User not found");
+            logger::log(logger::Header::ERROR, &format!("[auth_controller] - [login] [message: USER NOT FOUND]"));
             HttpResponse::new(StatusCode::UNAUTHORIZED)
         }
-        Err(err) => {
-            logger::log(logger::Header::ERROR, &err.to_string());
+        Err(auth_error) => {
+            logger::log(logger::Header::ERROR, &format!("[auth_controller] - [login] auth_error = {}", auth_error));
             HttpResponse::InternalServerError().finish()
         }
     }
 }
 
-/// 認証済みのユーザーデータを返却
+/// Returns the currently authenticated user's data.
 /// 
-/// # 引数
+/// # Arguments
 /// 
-/// * `req` - リクエストパラメーター
+/// * `req` - HTTP request
 /// 
-/// # 戻り値
+/// # Returns
 /// 
-/// 認証済みのユーザーデータを返却
-/// 認証済みでない場合は、401 を返却
+/// Returns the authenticated user's data if the request is valid. Returns 401 if unauthorized.
 pub async fn current_user(req: HttpRequest) -> impl Responder {
     match jwt::verify(&req) {
         Ok(user_info) => HttpResponse::Ok().json(user_info),
         Err(err) => {
-            logger::log(logger::Header::ERROR, &err.to_string());
+            logger::log(logger::Header::ERROR, &format!("[auth_controller] - [login] err = {}", err));
+
             HttpResponse::new(StatusCode::UNAUTHORIZED)
         }
     }

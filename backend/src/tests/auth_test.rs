@@ -365,13 +365,15 @@ mod tests {
         mock_service
             .expect_login()
             .returning(|_| Ok(Some(User {
-                id: "1".to_string(),
+                id: 1,
                 name: "test_user1".to_string(),
+                email: "test@gmail.com".to_string(),
                 token: "test_token".to_string(),
             })));
 
         let req = LoginRequest {
             name: "test_user1".to_string(),
+            email: "test@gmail.com".to_string(),
             password: "Password123".to_string()
         };
 
@@ -401,6 +403,7 @@ mod tests {
 
         let req = LoginRequest {
             name: "test_user1".to_string(),
+            email: "test@gmail.com".to_string(),
             password: "P123".to_string()
         };
 
@@ -444,6 +447,7 @@ mod tests {
 
         let req = LoginRequest {
             name: "test_user1".to_string(),
+            email: "test@gmail.com".to_string(),
             password: "Password".to_string()
         };
 
@@ -487,6 +491,7 @@ mod tests {
 
         let req = LoginRequest {
             name: "test_user1".to_string(),
+            email: "test@gmail.com".to_string(),
             password: "password123".to_string()
         };
 

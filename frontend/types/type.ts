@@ -79,6 +79,7 @@ export type SignupRequest = {
 
 export type LoginRequest = {
   name: string;
+  email: string;
   password: string;
 };
 
@@ -88,7 +89,7 @@ export type AuthContextType = {
   loading: boolean;
   signup: (name: string, email: string, password: string) => Promise<boolean>;
   verifyEmail: (token: string) => Promise<boolean>;
-  login: (name: string, password: string) => Promise<boolean>;
+  login: (name: string, email: string, password: string) => Promise<boolean>;
   signOut: () => Promise<boolean>;
   guestLogin: () => Promise<boolean>;
 };

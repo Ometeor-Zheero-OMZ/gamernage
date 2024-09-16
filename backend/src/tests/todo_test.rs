@@ -34,8 +34,8 @@ mod tests {
 
         let mock_todos = vec![TodoItem {
             id: 1,
-            user_id: Some("1".to_string()),
-            game_id: Some("1".to_string()),
+            user_id: Some(1),
+            game_id: Some(1),
             title: "test".to_string(),
             description: "test".to_string(),
             is_completed: false,
@@ -55,7 +55,7 @@ mod tests {
             .returning(move |_| Ok(mock_todos_clone.clone()));
 
         let user = Claims {
-            id: "1".to_string(),
+            id: 1,
             sub: "test_user".to_string(),
             exp: 1239
         };
@@ -100,7 +100,7 @@ mod tests {
             });
 
         let user = Claims {
-            id: "1".to_string(),
+            id: 1,
             sub: "test_user".to_string(),
             exp: 1239,
         };
@@ -143,7 +143,7 @@ mod tests {
             });
     
         let user = Claims {
-            id: "1".to_string(),
+            id: 1,
             sub: "test_user".to_string(),
             exp: 1239,
         };
@@ -177,7 +177,7 @@ mod tests {
             });
     
         let user = Claims {
-            id: "1".to_string(),
+            id: 1,
             sub: "test_user".to_string(),
             exp: 1239,
         };
@@ -211,7 +211,7 @@ mod tests {
             });
     
         let user = Claims {
-            id: "1".to_string(),
+            id: 1,
             sub: "test_user".to_string(),
             exp: 1239,
         };
