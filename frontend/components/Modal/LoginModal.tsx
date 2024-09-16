@@ -17,8 +17,10 @@ const LoginModal: FC<LoginModalProps> = ({ isVisible, onClose }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const { toast } = useToast();
 
@@ -32,6 +34,10 @@ const LoginModal: FC<LoginModalProps> = ({ isVisible, onClose }) => {
     setName(e.target.value);
   };
 
+  const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+  };
+
   const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
     setPassword(e.target.value);
   };
@@ -39,7 +45,7 @@ const LoginModal: FC<LoginModalProps> = ({ isVisible, onClose }) => {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoggingIn(true);
-    let isSuccess = await login(name, password);
+    let isSuccess = await login(name, email, password);
     setIsLoggingIn(false);
 
     if (isSuccess) {
@@ -90,7 +96,7 @@ const LoginModal: FC<LoginModalProps> = ({ isVisible, onClose }) => {
           method="post"
         >
           <div className="mb-4 relative">
-            <i className="fas fa-user absolute top-4 left-4 text-lg text-[#aaa]"></i>
+            <i className="fas fa-user absolute top-3 left-4 text-lg text-[#aaa]"></i>
             <input
               className="w-[250px] py-3 pl-12 pr-4 border-none outline-none rounded-[30px] bg-[#00000099] text-[#ddd] text-lg"
               type="text"
@@ -101,16 +107,38 @@ const LoginModal: FC<LoginModalProps> = ({ isVisible, onClose }) => {
             />
           </div>
           <div className="mb-4 relative">
-            <i className="fas fa-key absolute top-4 left-4 text-lg text-[#aaa]"></i>
+            <i className="far fa-envelope absolute top-3 left-4 text-lg text-[#aaa]"></i>
             <input
               className="w-[250px] py-3 pl-12 pr-4 border-none outline-none rounded-[30px] bg-[#00000099] text-[#ddd] text-lg"
-              type="password"
+              type="text"
+              placeholder="Email"
+              name="email"
+              onChange={handleEmailChange}
+              required
+            />
+          </div>
+          <div className="mb-4 relative">
+            <i className="fas fa-key absolute top-3 left-4 text-lg text-[#aaa]"></i>
+            <input
+              className="w-[250px] py-3 pl-12 pr-4 border-none outline-none rounded-[30px] bg-[#00000099] text-[#ddd] text-lg"
+              type={showPassword ? "text" : "password"}
               placeholder="Password"
               name="password"
               onChange={handlePasswordChange}
               disabled={isLoggingIn}
               required
             />
+            <button
+              type="button"
+              className="absolute top-3 right-4 text-lg text-[#aaa] focus:outline-none"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? (
+                <i className="fas fa-eye" />
+              ) : (
+                <i className="fas fa-eye-slash" />
+              )}
+            </button>
           </div>
           <button
             className="w-[310px] py-3 px-4 border-none outline-none rounded-[30px] bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-lg uppercase my-2.5 shadow-[0_5px_20px_rgba(0,0,0,0.4)] cursor-pointer transition-transform duration-300 hover:translate-y-[-2px] hover:shadow-[0_8px_25px_rgba(0,0,0,0.3)] active:translate-y-0"

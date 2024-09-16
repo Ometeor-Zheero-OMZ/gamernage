@@ -1,3 +1,5 @@
+//! Auth Model
+
 use serde::{Serialize, Deserialize};
 use validator::{Validate, ValidationError};
 use regex::Regex;
@@ -17,6 +19,10 @@ pub struct SignupRequest {
 #[derive(Serialize, Deserialize, Debug, Validate)]
 pub struct LoginRequest {
     pub name: String,
+    #[validate(email(message = "Invalid email address"))]
+    #[validate(length(max = 319, message = "Email address too long"))]
+    #[validate(custom(function = "validate_email"))]
+    pub email: String,
     #[validate(length(max = 127, message = "Password too long"))]
     #[validate(custom(function = "validate_password"))]
     pub password: String,

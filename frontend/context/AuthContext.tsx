@@ -43,7 +43,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
           toast({
             title: "Authentication Failure",
             description:
-              "The name you entered is already in use. Please choose a different name.",
+              "The email you entered is already in use. Please choose a different email.",
             variant: "destructive",
             style: {
               borderColor: "#eb3939",
@@ -106,8 +106,8 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     }
   };
 
-  const login = async (name: string, password: string) => {
-    const loginRequest: LoginRequest = { name, password };
+  const login = async (name: string, email: string, password: string) => {
+    const loginRequest: LoginRequest = { name, email, password };
 
     try {
       const response = await axios.post("/api/auth/login", loginRequest);
@@ -122,6 +122,21 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       return true;
     } catch (error) {
       if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          toast({
+            title: "Server Error",
+            description: "User not found",
+            variant: "destructive",
+            style: {
+              borderColor: "#eb3939",
+              backgroundColor: "#eb3939",
+              boxShadow: "0 10px 15px rgba(0, 0, 0, 0.3)",
+            },
+          });
+
+          return false;
+        }
+
         if (error.response?.status === 500) {
           toast({
             title: "Server Error",
@@ -180,11 +195,13 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const guestLogin = async () => {
     // テストデータ
     const name = "test_user1";
+    const email = "test@gmail.com";
     const password = "password";
 
     try {
       const response = await axios.post("/api/auth/guest_login", {
         name,
+        email,
         password,
       });
 
