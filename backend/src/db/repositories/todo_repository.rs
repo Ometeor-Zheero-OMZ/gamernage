@@ -67,7 +67,7 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio_postgres::{Transaction, NoTls};
 use bb8_postgres::{PostgresConnectionManager, bb8::Pool};
-use crate::db::models::todo::{RequestCompleteTodoItem, RequestDeleteTodoItem, RequestCreateTodoItem, ResponseCreateTodoItem, TodoItem, RequestUpdateTodoItem};
+use crate::db::models::todo::*;
 use crate::errors::todo_error::TodoError;
 
 #[async_trait]
