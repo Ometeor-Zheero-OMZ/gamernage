@@ -11,12 +11,10 @@ use bb8_postgres::{bb8::Pool, PostgresConnectionManager};
 use postgres::NoTls;
 use validator::Validate;
 
-use crate::{
-    constants::custom_type::AuthRepositoryArc,
-    db::models::{auth::{LoginRequest, SignupRequest}, user::User},
-    errors::auth_error::AuthError,
-    libraries::logger
-};
+use crate::constants::custom_type::AuthRepositoryArc;
+use crate::db::models::{auth::{LoginRequest, SignupRequest}, user::User};
+use crate::{app_log, error_log};
+use crate::errors::auth_error::AuthError;
 
 #[async_trait]
 pub trait AuthService: Send + Sync {
@@ -82,10 +80,6 @@ impl AuthService for AuthServiceImpl {
     /// * `Ok(())` - If the signup operation is successful.
     /// * `Err(AuthError)` - If an error occurs during the operation, including validation errors.
     async fn signup(&self, req: &SignupRequest) -> Result<(), AuthError> {
-        if let Err(validation_errors) = req.validate() {
-            return Err(AuthError::ValidationError(validation_errors));
-        }
-
         let pool = self.pool.clone();
         let mut conn = pool.get().await.map_err(AuthError::from)?;
         let mut tx = conn.transaction().await.map_err(AuthError::from)?;
@@ -99,7 +93,7 @@ impl AuthService for AuthServiceImpl {
             }
             Err(auth_error) => {
                 tx.rollback().await.map_err(AuthError::from)?;
-                logger::log(logger::Header::INFO, &format!("[auth_service] - [signup] auth_error = {}", auth_error));
+                error_log!("[auth_service] - [signup] - [message: auth_error = {}]", auth_error);
 
                 Err(auth_error)
             }

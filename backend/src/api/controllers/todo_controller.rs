@@ -16,15 +16,14 @@
 //! - `reqwest`: HTTP client library.
 //! - `crate::api::jwt::jwt`: JWT creation and verification functions.
 //! - `crate::db::models::todo::{RequestCreateTodoItem, RequestUpdateTodoItem, RequestDeleteTodoItem, RequestCompleteTodoItem}`: Models for TODO item requests.
-//! - `crate::libraries::{app_state::AppState, logger}`: Application state and logging functions.
+//! - `crate::libraries::app_state::AppState`: Application state.
 
 
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use reqwest::StatusCode;
-use crate::{
-    api::jwt::jwt,
-    libraries::{app_state::AppState, logger}
-};
+use crate::api::jwt::jwt;
+use crate::{app_log, error_log};
+use crate::libraries::app_state::AppState;
 use crate::db::models::todo::{
     RequestCreateTodoItem,
     RequestUpdateTodoItem,
@@ -65,12 +64,12 @@ pub async fn get_todos(
                 HttpResponse::Ok().json(todos)
             },
             Err(todo_error) => {
-                logger::log(logger::Header::ERROR, &format!("[todo_controller] - [get_todos] - todo_error = {}", todo_error));
+                error_log!("[todo_controller] - [get_todos] - [message: todo_error = {}]", todo_error);
                 HttpResponse::InternalServerError().finish()
             }
         },
-        Err(err) => {
-            logger::log(logger::Header::ERROR, &format!("[todo_controller] - [get_todos] - err = {}", err));
+        Err(error) => {
+            error_log!("[todo_controller] - [get_todos] - [message: error = {}]", error);
             HttpResponse::new(StatusCode::UNAUTHORIZED)
         }
     }
@@ -109,12 +108,12 @@ pub async fn create_todo(
         Ok(user_data) => match todo_service.create_todo(user_data, &todo_req).await {
             Ok(response) => HttpResponse::Ok().json(response),
             Err(todo_error) => {
-                logger::log(logger::Header::ERROR, &format!("[todo_controller] - [create_todo] - todo_error = {}", todo_error));
+                error_log!("[todo_controller] - [create_todo] - [message: todo_error = {}]", todo_error);
                 HttpResponse::InternalServerError().finish()
             }
         },
-        Err(err) => {
-            logger::log(logger::Header::ERROR, &format!("[todo_controller] - [create_todo] - err = {}", err));
+        Err(error) => {
+            error_log!("[todo_controller] - [create_todo] - [message: error = {}]", error);
             HttpResponse::new(StatusCode::UNAUTHORIZED)
         }
     }
@@ -143,12 +142,12 @@ pub async fn update_todo(
         Ok(user_data) => match todo_service.update_todo(user_data, &todo_req).await {
             Ok(()) => HttpResponse::Ok().finish(),
             Err(todo_error) => {
-                logger::log(logger::Header::ERROR, &format!("[todo_controller] - [delete_todo] - todo_error = {}", todo_error));
+                error_log!("[todo_controller] - [update_todo] - [message: todo_error = {}]", todo_error);
                 HttpResponse::InternalServerError().finish()
             }
         },
-        Err(err) => {
-            logger::log(logger::Header::ERROR, &format!("[todo_controller] - [delete_todo] - err = {}", err));
+        Err(error) => {
+            error_log!("[todo_controller] - [update_todo] - [message: error = {}]", error);
             HttpResponse::new(StatusCode::UNAUTHORIZED)
         }
     }
@@ -177,12 +176,12 @@ pub async fn delete_todo(
         Ok(user_data) => match todo_service.delete_todo(user_data, &todo_req).await {
             Ok(()) => HttpResponse::Ok().finish(),
             Err(todo_error) => {
-                logger::log(logger::Header::ERROR, &format!("[todo_controller] - [delete_todo] - todo_error = {}", todo_error));
+                error_log!("[todo_controller] - [delete_todo] - [message: todo_error = {}]", todo_error);
                 HttpResponse::InternalServerError().finish()
             }
         },
-        Err(err) => {
-            logger::log(logger::Header::ERROR, &format!("[todo_controller] - [delete_todo] - err = {}", err));
+        Err(error) => {
+            error_log!("[todo_controller] - [delete_todo] - [message: error = {}]", error);
             HttpResponse::new(StatusCode::UNAUTHORIZED)
         }
     }
@@ -211,12 +210,12 @@ pub async fn complete_todo(
         Ok(user_data) => match todo_service.complete_todo(user_data, &todo_req).await {
             Ok(()) => HttpResponse::Ok().finish(),
             Err(todo_error) => {
-                logger::log(logger::Header::ERROR, &format!("[todo_controller] - [delete_todo] - todo_error = {}", todo_error));
+                error_log!("[todo_controller] - [complete_todo] - [message: todo_error = {}]", todo_error);
                 HttpResponse::InternalServerError().finish()
             }
         },
-        Err(err) => {
-            logger::log(logger::Header::ERROR, &format!("[todo_controller] - [delete_todo] - err = {}", err));
+        Err(error) => {
+            error_log!("[todo_controller] - [complete_todo] - [message: error = {}]", error);
             HttpResponse::new(StatusCode::UNAUTHORIZED)
         }
     }
