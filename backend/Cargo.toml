@@ -3,13 +3,12 @@ name = "backend"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 actix-web = "4"
 actix-rt = "2"
 actix-cors = "0.6"
 actix-service = "2"
+actix-session = { version = "0.10.1", features = ["cookie-session"]}
 futures = "0.3"
 # db
 bb8 = "0.5"
@@ -28,6 +27,7 @@ lettre_email = "0.9.4"
 uuid = { version = "1.10.0", features = ["v4", "v7"] }
 argon2 = "0.5.3"
 rand_core = { version = "0.6.4", features = ["getrandom"] }
+webauthn-rs = { version = "0.5.0", features = ["danger-allow-state-serialisation"] }
 # other, like json, logger
 serde_json = "1.0"
 log = "0.4"
@@ -41,6 +41,9 @@ lazy_static = "1.4"
 async-trait = "0.1.82"
 validator = { version = "0.18.1", features = ["derive"]}
 regex = "1.10.6"
+once_cell = "1.19.0"
+anyhow = "1.0.89"
+thiserror = "1.0.63"
 
 [dev-dependencies]
 mockall = "0.13.0"

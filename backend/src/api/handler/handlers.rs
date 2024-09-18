@@ -6,6 +6,8 @@ use actix_web::{
 };
 use crate::api::controllers::{auth_controller, todo_controller};
 
+use super::webauthn::{finish_authentication, finish_register, start_authentication, start_register};
+
 /// Returns a 404 status code for requests to non-existent paths.
 /// 
 /// # Arguments
@@ -56,6 +58,11 @@ pub fn api_scope() -> Scope {
         .route("/auth/login", web::post().to(auth_controller::login))
         // Get current user information
         .route("/auth/current_user", web::get().to(auth_controller::current_user))
+        // WebAuthn
+        .route("/register_start/{username}", web::post().to(start_register))
+        .route("/register_finish", web::post().to(finish_register))
+        .route("/login_start/{username}", web::post().to(start_authentication))
+        .route("/login_finish", web::post().to(finish_authentication))
         // 確認メール
         // .route("/api/auth/verify_email", web::get().to(auth::verify_email))
         // TODO list retrieval

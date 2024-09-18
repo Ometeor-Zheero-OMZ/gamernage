@@ -54,6 +54,7 @@ use actix_web::{
 use futures::future::{ok, Ready, LocalBoxFuture};
 
 use crate::api::jwt::jwt;
+use crate::{app_log, info_log};
 
 /// Middleware for JWT authentication in Actix Web.
 ///
@@ -118,15 +119,25 @@ where
     ///
     /// A future that resolves to the response from the service or an `Unauthorized` response if authentication fails.
     fn call(&self, request: ServiceRequest) -> Self::Future {
+        let path = request.path();
+        info_log!("Request path: {}", path);
+
         // List of endpoints without permission to access
         let exempt_paths = vec![
             "/api/auth/guest_login",
             "/api/auth/signup",
             "/api/auth/login",
-            "/api/auth/current_user"
+            "/api/auth/current_user",
+            "/api/register_start/",
+            "/api/register_finish",
+            "/api/login_start/",
+            "/api/login_finish"
         ];
 
-        let is_exempt = exempt_paths.contains(&request.path());
+        // let is_exempt = exempt_paths.contains(&request.path());
+        // let is_exempt = exempt_paths.iter().any(|path| request.path().starts_with(path));
+        let is_exempt = exempt_paths.iter().any(|&exempt_path| path.starts_with(exempt_path));
+        info_log!("Is valid path?: {}", is_exempt);
 
         if !is_exempt {
             let is_logged_in = match jwt::verify(&request) {

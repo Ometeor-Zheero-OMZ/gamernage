@@ -11,6 +11,11 @@
 
 use actix_cors::Cors;
 use actix_web::{web::Data, App, HttpServer};
+use actix_session::SessionMiddleware;
+use actix_web::cookie::Key;
+use actix_web::web::JsonConfig;
+use api::middlewares::session_middleware::MemorySession;
+use api::middlewares::webauthn_middleware::startup;
 use dotenvy::dotenv;
 
 use api::middlewares::jwt_middleware;
@@ -41,6 +46,10 @@ async fn main() -> std::io::Result<()> {
 
     let app_state = AppState::init(&pool);
 
+    let key = Key::generate();
+
+    let (webauthn, webauthn_users) = startup();
+
     HttpServer::new(move || {
         // Configure CORS to allow any origin and restrict HTTP methods and headers
         let cors = Cors::default()
@@ -49,16 +58,26 @@ async fn main() -> std::io::Result<()> {
             .allowed_headers(vec!["Authorization", "Content-Type"])
             .max_age(60 * 60 * 24); // Cache preflight request for 24 hours
 
+        let session = SessionMiddleware::builder(MemorySession, key.clone())
+            .cookie_name("webauthnrs".to_string())
+            .cookie_http_only(true)
+            .cookie_secure(false)
+            .build();
+
         // Create Actix Web app instance
         App::new()
             .wrap(jwt_middleware::JwtMiddleware)
             .wrap(cors)
+            .wrap(session)
+            .app_data(JsonConfig::default().limit(4096))
             .app_data(Data::new(pool.clone()))
             .app_data(Data::new(app_state.clone()))
+            .app_data(webauthn.clone())
+            .app_data(webauthn_users.clone())
             .service(api::handler::handlers::api_scope())
     })
     .bind("0.0.0.0:8080")?
-    .workers(20) // 同時接続は20人を想定
+    .workers(10) // TODO: システムのCPUコア数に基づいて設定したいため、模索中
     .run()
     .await
 }
