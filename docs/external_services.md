@@ -13,3 +13,7 @@ https://mailtrap.io/home
 ## Ref
 
 https://mailtrap.io/blog/rust-send-email/
+
+# WebAuthn
+
+https://zenn.dev/kg0r0/articles/c271abb1ab2b76
