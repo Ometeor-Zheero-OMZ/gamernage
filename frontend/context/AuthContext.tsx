@@ -227,10 +227,10 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   };
 
   const guestLogin = async () => {
-    // テストデータ
+    // ゲストログイン用データ
     const name = "test_user1";
     const email = "test@gmail.com";
-    const password = "password";
+    const password = "Password123";
 
     try {
       const response = await axios.post("/api/auth/guest_login", {
