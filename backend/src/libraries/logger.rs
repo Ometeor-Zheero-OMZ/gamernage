@@ -99,3 +99,56 @@ pub fn log(header: Header, message: &str) {
         writeln!(log_file, "[{}] {} {}", Local::now().format("%m-%d-%Y %H:%M:%S").to_string(), header, message).unwrap();
     }
 }
+
+#[macro_export]
+macro_rules! app_log {
+    // 引数あり
+    ($header:expr, $msg:expr, $($arg:tt)*) => {
+        let formatted_message = format!($msg, $($arg)*);
+        crate::libraries::logger::log($header, &formatted_message);
+    };
+    // 引数なし
+    ($header:expr, $msg:expr) => {
+        crate::libraries::logger::log($header, $msg);
+    };
+}
+
+#[macro_export]
+macro_rules! success_log {
+    ($msg:expr, $($arg:tt)*) => {
+        app_log!(crate::libraries::logger::Header::SUCCESS, $msg, $($arg)*);
+    };
+    ($msg:expr) => {
+        app_log!(crate::libraries::logger::Header::SUCCESS, $msg);
+    }
+}
+
+#[macro_export]
+macro_rules! info_log {
+    ($msg:expr, $($arg:tt)*) => {
+        app_log!(crate::libraries::logger::Header::INFO, $msg, $($arg)*);
+    };
+    ($msg:expr) => {
+        app_log!(crate::libraries::logger::Header::INFO, $msg);
+    };
+}
+
+#[macro_export]
+macro_rules! warning_log {
+    ($msg:expr, $($arg:tt)*) => {
+        app_log!(crate::libraries::logger::Header::WARNING, $msg, $($arg)*);
+    };
+    ($msg:expr) => {
+        app_log!(crate::libraries::logger::Header::WARNING, $msg);
+    };
+}
+
+#[macro_export]
+macro_rules! error_log {
+    ($msg:expr, $($arg:tt)*) => {
+        app_log!(crate::libraries::logger::Header::ERROR, $msg, $($arg)*);
+    };
+    ($msg:expr) => {
+        app_log!(crate::libraries::logger::Header::ERROR, $msg);
+    };
+}

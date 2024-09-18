@@ -48,7 +48,7 @@ use serde::{Serialize, Deserialize};
 use std::time::{SystemTime, Duration};
 
 use crate::api::utils::message::SVR_MSG;
-use crate::libraries::logger;
+use crate::{app_log, error_log};
 
 /// Struct representing JWT claims.
 ///
@@ -173,9 +173,9 @@ pub fn verify <R: RequestHeaders>(req: &R)  -> Result<Claims, String> {
                     Ok(user_info) => {
                         return Ok(user_info.claims);
                     },
-                    Err(err) => {
-                        logger::log(logger::Header::INFO, &format!("[jwt] - [verify] err = {}", err));
-                        return Err(err.to_string());
+                    Err(error) => {
+                        error_log!("[jwt] - [verify] error = {}", error);
+                        return Err(error.to_string());
                     }
                 }
             }
