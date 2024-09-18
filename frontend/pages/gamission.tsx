@@ -26,9 +26,9 @@ import {
   deleteTask,
   fetchTasks,
   updateTask,
-} from "@/api/todos";
+} from "@/pages/api/todos";
 
-const Gamission = () => {
+export default function Gamission() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [tasks, setTasks] = useState<TaskParam[]>([]);
@@ -179,6 +179,4 @@ const Gamission = () => {
       </div>
     </>
   );
-};
-
-export default Gamission;
+}

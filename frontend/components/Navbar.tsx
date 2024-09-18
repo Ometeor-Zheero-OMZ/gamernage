@@ -149,10 +149,18 @@ const Navbar = () => {
                 </li>
                 <li className="pr-[30px] hover:bg-[rgba(87, 87, 87, 0.8)]">
                   <Link
-                    href="#"
+                    href="/register"
                     className="block w-full py-5 text-sm text-white no-underline uppercase hover:bg-[#575757] hover:bg-opacity-80"
                   >
-                    Download
+                    Register
+                  </Link>
+                </li>
+                <li className="pr-[30px] hover:bg-[rgba(87, 87, 87, 0.8)]">
+                  <Link
+                    href="/login"
+                    className="block w-full py-5 text-sm text-white no-underline uppercase hover:bg-[#575757] hover:bg-opacity-80"
+                  >
+                    Login
                   </Link>
                 </li>
               </ul>
