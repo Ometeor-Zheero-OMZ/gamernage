@@ -1,9 +1,9 @@
 //! User Service Module
 
-use crate::api::jwt::jwt::Claims;
 use tokio_postgres::Error;
+use crate::api::jwt::jwt::Claims;
+use crate::{app_log, error_log};
 
-use crate::libraries::logger;
 
 /// Retrieves the user ID from the database using the user's email address.
 ///
@@ -42,9 +42,9 @@ pub async fn get_user_id(user: &Claims, transaction: &tokio_postgres::Transactio
 
             Ok(user_id)
         },
-        Err(err) => {
-            logger::log(logger::Header::ERROR, &format!("[user_service] - [get_user_id] err = {}", err));
-            Err(err)
+        Err(error) => {
+            error_log!("[user_service] - [get_user_id] - [message: error = {}]", error);
+            Err(error)
         }
     }
 }

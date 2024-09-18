@@ -72,12 +72,11 @@ use argon2::{
     },
     Argon2
 };
-use crate::{
-    api::jwt::jwt,
-    db::models::{auth::{LoginRequest, SignupRequest}, user::User},
-    errors::auth_error::AuthError,
-    libraries::logger
-};
+use crate::api::jwt::jwt;
+use crate::db::models::{auth::{LoginRequest, SignupRequest}, user::User};
+use crate::errors::auth_error::AuthError;
+use crate::{app_log, error_log};
+
 
 #[async_trait]
 pub trait AuthRepository: Send + Sync {
@@ -155,7 +154,7 @@ impl AuthRepository for AuthRepositoryImpl {
         let password: String = rows.get(0).unwrap().get("password");
 
         if verify(&req.password, &password).is_err() {
-            logger::log(logger::Header::ERROR, "[auth_repository] - [guest_login] - [Authentication Failed]");
+            error_log!("[auth_repository] - [guest_login] - [Authentication Failed]");
             return Ok(None);
         }
 
@@ -169,9 +168,9 @@ impl AuthRepository for AuthRepositoryImpl {
                 };
                 Ok(Some(user_data))
             }
-            Err(err) => {
-                logger::log(logger::Header::ERROR, &format!("[auth_repository] - [guest_login] err = {}", err));
-                Err(AuthError::TokenCreationError(err))
+            Err(error) => {
+                error_log!("[auth_repository] - [guest_login] - [message: error = {}]", error);
+                Err(AuthError::TokenCreationError(error))
             }
         }
     }
@@ -308,7 +307,7 @@ impl AuthRepository for AuthRepositoryImpl {
 
         // Return None if password does not match
         if argon2.verify_password(req.password.as_bytes(), &parsed_hash).is_err() {
-            logger::log(logger::Header::ERROR, &format!("[auth_repository] - [login] [message: Authentication Failed]"));
+            error_log!("[auth_repository] - [login] - [message: Authentication Failed]");
             return Ok(None);
         };
 

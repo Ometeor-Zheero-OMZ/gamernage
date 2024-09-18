@@ -9,13 +9,11 @@ use bb8_postgres::bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use postgres::NoTls;
 use std::sync::Arc;
-use crate::{
-    api::jwt::jwt::Claims,
-    constants::custom_type::TodoRepositoryArc,
-    db::models::todo::*,
-    errors::todo_error::TodoError
-};
-use crate::libraries::logger;
+use crate::api::jwt::jwt::Claims;
+use crate::constants::custom_type::TodoRepositoryArc;
+use crate::db::models::todo::*;
+use crate::{app_log, error_log};
+use crate::errors::todo_error::TodoError;
 
 use super::user_service::get_user_id;
 
@@ -84,7 +82,7 @@ impl TodoService for TodoServiceImpl {
             }
             Err(todo_error) => {
                 tx.rollback().await.map_err(TodoError::from)?;
-                logger::log(logger::Header::ERROR, &format!("[todo_service] - [get_todos] - todo_error = {}", todo_error));
+                error_log!("[todo_service] - [get_todos] - [message: todo_error = {}]", todo_error);
 
                 Err(todo_error)
             }
@@ -121,7 +119,7 @@ impl TodoService for TodoServiceImpl {
             }
             Err(todo_error) => {
                 tx.rollback().await.map_err(TodoError::from)?;
-                logger::log(logger::Header::ERROR, &format!("[todo_service] - [create_todo] - todo_error = {}", todo_error));
+                error_log!("[todo_service] - [create_todo] - [message: todo_error = {}]", todo_error);
 
                 Err(todo_error)
             }
@@ -158,7 +156,7 @@ impl TodoService for TodoServiceImpl {
             }
             Err(todo_error) => {
                 tx.rollback().await.map_err(TodoError::from)?;
-                logger::log(logger::Header::ERROR, &format!("[todo_service] - [create_todo] - todo_error = {}", todo_error));
+                error_log!("[todo_service] - [update_todo] - [message: todo_error = {}]", todo_error);
 
                 Err(todo_error)
             }
@@ -195,7 +193,7 @@ impl TodoService for TodoServiceImpl {
             }
             Err(todo_error) => {
                 tx.rollback().await.map_err(TodoError::from)?;
-                logger::log(logger::Header::ERROR, &format!("[todo_service] - [create_todo] - todo_error = {}", todo_error));
+                error_log!("[todo_service] - [delete_todo] - [message: todo_error = {}]", todo_error);
 
                 Err(todo_error)
             }
@@ -232,7 +230,7 @@ impl TodoService for TodoServiceImpl {
             }
             Err(todo_error) => {
                 tx.rollback().await.map_err(TodoError::from)?;
-                logger::log(logger::Header::ERROR, &format!("[todo_service] - [create_todo] - todo_error = {}", todo_error));
+                error_log!("[todo_service] - [complete_todo] - [messageL todo_error = {}]", todo_error);
 
                 Err(todo_error)
             }

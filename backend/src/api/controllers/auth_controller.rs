@@ -16,23 +16,17 @@
 //! - `crate::api::jwt::jwt`: JWT creation and verification functions.
 //! - `crate::db::models::auth::{LoginRequest, SignupRequest}`: Authentication request models.
 //! - `crate::errors::auth_error::AuthError`: Authentication errors.
-//! - `crate::libraries::{app_state::AppState, logger}`: Application state and logging functions.
+//! - `crate::libraries::app_state::AppState`: Application state.
 
 
-use actix_web::{
-    HttpResponse,
-    Responder,
-    HttpRequest,
-    web,
-    http::StatusCode
-};
+use actix_web::{HttpResponse, Responder, HttpRequest, web};
 use postgres::error::SqlState;
-use crate::{
-    api::jwt::jwt,
-    db::models::auth::{LoginRequest, SignupRequest},
-    errors::auth_error::AuthError,
-    libraries::{app_state::AppState, logger}
-};
+use validator::Validate;
+use crate::api::jwt::jwt;
+use crate::db::models::auth::{LoginRequest, SignupRequest};
+use crate::errors::auth_error::AuthError;
+use crate::libraries::app_state::AppState;
+use crate::{app_log, success_log, error_log};
 
 /// Handles guest login.
 /// 
@@ -48,12 +42,16 @@ pub async fn guest_login(
     req: web::Json<LoginRequest>,
     app_state: web::Data<AppState>
 ) -> impl Responder {
+    if let Err(_validation_errors) = req.validate() {
+        return HttpResponse::BadRequest().finish();
+    }
+
     let auth_service = &app_state.auth_service;
 
     match auth_service.guest_login(&req).await {
         Ok(Some(user_data)) => HttpResponse::Ok().json(user_data),
         Ok(None) => {
-            HttpResponse::new(StatusCode::UNAUTHORIZED)
+            HttpResponse::Unauthorized().finish()
         }
         Err(_auth_error) => {
             HttpResponse::InternalServerError().finish()
@@ -75,26 +73,31 @@ pub async fn signup(
     req: web::Json<SignupRequest>,
     app_state: web::Data<AppState>
 ) -> impl Responder {
+    if let Err(_validation_errors) = req.validate() {
+        return HttpResponse::BadRequest().finish();
+    }
+
     let auth_service = &app_state.auth_service;
 
     match auth_service.signup(&req).await {
         Ok(()) => {
-            logger::log(logger::Header::SUCCESS, "Successfully signed up");
+            success_log!("[auth_controller] - [signup] - [message: Successfully signed up]");
             HttpResponse::Ok().finish()
         }
-        Err(AuthError::DatabaseError(ref err)) => {
-            if let Some(db_error) = err.as_db_error() {
+        Err(AuthError::DatabaseError(ref error)) => {
+            if let Some(db_error) = error.as_db_error() {
                 if db_error.code() == &SqlState::UNIQUE_VIOLATION {
-                    logger::log(logger::Header::ERROR, &format!("[auth_controller] - [signup] - [message: {}]", db_error));
-                    return HttpResponse::new(StatusCode::CONFLICT);
+                    error_log!("[auth_controller] - [signup] - [message: db_error = {}]", db_error);
+                    // return HttpResponse::new(StatusCode::CONFLICT);
+                    return HttpResponse::Conflict().finish();
                 }
             }
 
-            logger::log(logger::Header::ERROR, &format!("[auth_controller] - [signup] - [message: other database error]"));
+            error_log!("[auth_controller] - [signup] - [message: error = {}]", error);
             HttpResponse::InternalServerError().finish()
         }
         Err(auth_error) => {
-            logger::log(logger::Header::ERROR, &format!("[auth_controller] - [signup] - auth_error = {}", auth_error));
+            error_log!("[auth_controller] - [signup] - [message: auth_error = {}]", auth_error);
             HttpResponse::InternalServerError().finish()
         }
     }
@@ -158,16 +161,20 @@ pub async fn login(
     req: web::Json<LoginRequest>,
     app_state: web::Data<AppState>
 ) -> impl Responder {
+    if let Err(_validation_errors) = req.validate() {
+        return HttpResponse::BadRequest().finish();
+    }
+
     let auth_service = &app_state.auth_service;
 
     match auth_service.login(&req).await {
         Ok(Some(user_data)) => HttpResponse::Ok().json(user_data),
         Ok(None) => {
-            logger::log(logger::Header::ERROR, &format!("[auth_controller] - [login] [message: USER NOT FOUND]"));
-            HttpResponse::new(StatusCode::UNAUTHORIZED)
+            error_log!("[auth_controller] - [login] - [message: USER NOT FOUND]");
+            HttpResponse::Unauthorized().finish()
         }
         Err(auth_error) => {
-            logger::log(logger::Header::ERROR, &format!("[auth_controller] - [login] auth_error = {}", auth_error));
+            error_log!("[auth_controller] - [login] - [message: auth_error = {}]", auth_error);
             HttpResponse::InternalServerError().finish()
         }
     }
@@ -185,10 +192,9 @@ pub async fn login(
 pub async fn current_user(req: HttpRequest) -> impl Responder {
     match jwt::verify(&req) {
         Ok(user_info) => HttpResponse::Ok().json(user_info),
-        Err(err) => {
-            logger::log(logger::Header::ERROR, &format!("[auth_controller] - [login] err = {}", err));
-
-            HttpResponse::new(StatusCode::UNAUTHORIZED)
+        Err(error) => {
+            error_log!("[auth_controller] - [current_user] - [message: error = {}]", error);
+            HttpResponse::Unauthorized().finish()
         }
     }
 }

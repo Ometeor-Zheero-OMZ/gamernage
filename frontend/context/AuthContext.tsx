@@ -33,13 +33,15 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const signupRequest: SignupRequest = { name, email, password };
 
     try {
-      const response = await axios.post("/api/auth/signup", signupRequest);
+      await axios.post("/api/auth/signup", signupRequest);
 
       // サインアップ成功後の処理
       return true;
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        if (error.response?.status === 409) {
+        const response = error.response;
+
+        if (response?.status === 409) {
           toast({
             title: "Authentication Failure",
             description:
@@ -55,7 +57,22 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
           return false;
         }
 
-        if (error.response?.status === 500) {
+        if (response?.status === 400) {
+          toast({
+            title: "Bad Request Error",
+            description: "Validation Error",
+            variant: "destructive",
+            style: {
+              borderColor: "#eb3939",
+              backgroundColor: "#eb3939",
+              boxShadow: "0 10px 15px rgba(0, 0, 0, 0.3)",
+            },
+          });
+
+          return false;
+        }
+
+        if (response?.status === 500) {
           toast({
             title: "Server Error",
             description:
@@ -122,9 +139,11 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       return true;
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        if (error.response?.status === 401) {
+        const response = error.response;
+
+        if (response?.status === 401) {
           toast({
-            title: "Server Error",
+            title: "Unauthorized Error",
             description: "User not found",
             variant: "destructive",
             style: {
@@ -137,7 +156,22 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
           return false;
         }
 
-        if (error.response?.status === 500) {
+        if (response?.status === 400) {
+          toast({
+            title: "Bad Request Error",
+            description: "Validation Error",
+            variant: "destructive",
+            style: {
+              borderColor: "#eb3939",
+              backgroundColor: "#eb3939",
+              boxShadow: "0 10px 15px rgba(0, 0, 0, 0.3)",
+            },
+          });
+
+          return false;
+        }
+
+        if (response?.status === 500) {
           toast({
             title: "Server Error",
             description:
@@ -193,10 +227,10 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   };
 
   const guestLogin = async () => {
-    // テストデータ
+    // ゲストログイン用データ
     const name = "test_user1";
     const email = "test@gmail.com";
-    const password = "password";
+    const password = "Password123";
 
     try {
       const response = await axios.post("/api/auth/guest_login", {
