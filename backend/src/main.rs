@@ -58,7 +58,7 @@ async fn main() -> std::io::Result<()> {
             .service(api::handler::handlers::api_scope())
     })
     .bind("0.0.0.0:8080")?
-    .workers(20) // 同時接続は20人を想定
+    .workers(20)
     .run()
     .await
 }
