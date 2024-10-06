@@ -1,21 +1,4 @@
 -- ユーザー
--- DROP TABLE IF EXISTS users;
--- CREATE TABLE users (
---   id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
---   public_id UUID UNIQUE DEFAULT gen_random_uuid(),
---   name TEXT,
---   email TEXT UNIQUE,
---   email_verified TIMESTAMP WITH TIME ZONE,
---   username TEXT UNIQUE,
---   image TEXT,
---   profile_image BYTEA NULL,
---   password VARCHAR(250) NOT NULL,
---   token TEXT NULL,
---   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
---   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
--- );
-
--- ユーザー
 DROP TABLE IF EXISTS users;
 CREATE TABLE users (
   id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
@@ -29,13 +12,16 @@ DROP TABLE IF EXISTS user_profiles;
 CREATE TABLE user_profiles (
   id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   public_id UUID UNIQUE DEFAULT gen_random_uuid(),
-  user_id INT UNIQUE REFERENCES users(id),
-  name TEXT,
+  user_id INT UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
   email TEXT UNIQUE,
   email_verified TIMESTAMP WITH TIME ZONE,
-  username TEXT UNIQUE,
+  username TEXT UNIQUE NOT NULL,
   image TEXT,
+  header_image TEXT,
   profile_image BYTEA NULL,
+  bio TEXT,
+  onboarded BOOLEAN DEFAULT FALSE NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -48,8 +34,8 @@ DROP TABLE IF EXISTS user_auth;
 CREATE TABLE user_auth (
   id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   public_id UUID UNIQUE DEFAULT gen_random_uuid(),
-  user_id INT UNIQUE REFERENCES users(id),
-  password VARCHAR(250) NOT NULL,
+  user_id INT UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  password VARCHAR(512) NOT NULL,
   token TEXT NULL,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -93,87 +79,60 @@ CREATE TABLE session (
 );
 
 -- スレッド
-DROP TABLE IF EXISTS subreddit;
-CREATE TABLE subreddit (
+DROP TABLE IF EXISTS threads;
+CREATE TABLE threads (
   id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  public_id UUID UNIQUE DEFAULT gen_random_uuid(),
-  name TEXT UNIQUE NOT NULL,
-  creator_id INT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_creator FOREIGN KEY (creator_id) REFERENCES users(id)
-);
-
--- 定期購読
-DROP TABLE IF EXISTS subscription;
-CREATE TABLE subscription (
-  public_id UUID UNIQUE DEFAULT gen_random_uuid(),
-  user_id INT NOT NULL,
-  subreddit_id INT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT pk_subscription PRIMARY KEY (user_id, subreddit_id),
-  CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id),
-  CONSTRAINT fk_subreddit FOREIGN KEY (subreddit_id) REFERENCES subreddit(id)
-);
-
--- 投稿
-DROP TABLE IF EXISTS post;
-CREATE TABLE post (
-  id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  public_id UUID UNIQUE DEFAULT gen_random_uuid(),
-  title TEXT NOT NULL,
-  content JSONB,
-  author_id INT NOT NULL,
-  subreddit_id INT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_author FOREIGN KEY (author_id) REFERENCES users(id),
-  CONSTRAINT fk_subreddit FOREIGN KEY (subreddit_id) REFERENCES subreddit(id)
-);
-
--- コメント
-DROP TABLE IF EXISTS comment;
-CREATE TABLE comment (
-  id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  public_id UUID UNIQUE DEFAULT gen_random_uuid(),
   text TEXT NOT NULL,
-  author_id INT NOT NULL,
-  post_id INT NOT NULL,
-  reply_to_id INT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_author FOREIGN KEY (author_id) REFERENCES users(id),
-  CONSTRAINT fk_post FOREIGN KEY (post_id) REFERENCES post(id) ON DELETE CASCADE,
-  CONSTRAINT fk_reply_to FOREIGN KEY (reply_to_id) REFERENCES comment(id) ON DELETE RESTRICT
+  author INT NOT NULL,
+  community INT,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  parent_id INT,
+  FOREIGN KEY (author) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (community) REFERENCES communities(id) ON DELETE SET NULL,
+  FOREIGN KEY (parent_id) REFERENCES threads(id) ON DELETE SET NULL
 );
 
--- 投票
-DROP TABLE IF EXISTS vote;
-CREATE TABLE vote (
-  public_id UUID UNIQUE DEFAULT gen_random_uuid(),
-  user_id INT NOT NULL,
-  post_id INT NOT NULL,
-  type TEXT CHECK (type IN ('UP', 'DOWN')) NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT pk_vote PRIMARY KEY (user_id, post_id),
-  CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id),
-  CONSTRAINT fk_post FOREIGN KEY (post_id) REFERENCES post(id) ON DELETE CASCADE
+-- 子スレッド
+DROP TABLE IF EXISTS thread_children;
+CREATE TABLE thread_children (
+  thread_id INT,
+  child_id INT,
+  PRIMARY KEY (thread_id, child_id),
+  FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE CASCADE,
+  FOREIGN KEY (child_id) REFERENCES threads(id) ON DELETE CASCADE
 );
 
--- コメント投票
-DROP TABLE IF EXISTS comment_vote;
-CREATE TABLE comment_vote (
-  public_id UUID UNIQUE DEFAULT gen_random_uuid(),
-  user_id INT NOT NULL,
-  comment_id INT NOT NULL,
-  type TEXT CHECK (type IN ('UP', 'DOWN')) NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT pk_comment_vote PRIMARY KEY (user_id, comment_id),
-  CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id),
-  CONSTRAINT fk_comment FOREIGN KEY (comment_id) REFERENCES comment(id) ON DELETE CASCADE
+-- コミュニティ
+DROP TABLE IF EXISTS communities;
+CREATE TABLE communities (
+  id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  username VARCHAR UNIQUE NOT NULL,
+  name VARCHAR NOT NULL,
+  image TEXT,
+  bio TEXT,
+  created_by INT REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- コミュニティメンバー
+DROP TABLE IF EXISTS community_members;
+CREATE TABLE community_members (
+  community_id INT,
+  user_id INT,
+  PRIMARY KEY (community_id, user_id),
+  FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- コミュニティに関連するスレッド
+DROP TABLE IF EXISTS community_threads;
+CREATE TABLE community_threads (
+  community_id INT,
+  thread_id INT,
+  PRIMARY KEY (community_id, thread_id),
+  FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE,
+  FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE CASCADE
 );
 
 -- ゲーム
