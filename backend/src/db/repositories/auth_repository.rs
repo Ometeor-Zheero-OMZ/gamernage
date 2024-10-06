@@ -1,11 +1,11 @@
 //! # Authentication Repository Module
 //!
-//! This module provides the implementation for handling authentication-related operations such as logging in and signing up users. 
+//! This module provides the implementation for handling authentication-related operations such as logging in and signing up users.
 //! It interfaces with a PostgreSQL database to manage user data and credentials.
 //!
 //! ## Overview
 //!
-//! The `AuthRepository` trait defines the methods for user authentication operations, including guest login, user signup, and user login. 
+//! The `AuthRepository` trait defines the methods for user authentication operations, including guest login, user signup, and user login.
 //! The `AuthRepositoryImpl` struct implements this trait and performs database operations using a connection pool.
 //!
 //! - `guest_login` - Authenticates a user based on their email and password, creating a JWT token if successful.
@@ -28,7 +28,7 @@
 //!
 //! ## Usage
 //!
-//! To use this module, you need to implement the `AuthRepository` trait in your application and initialize it with a `Pool<PostgresConnectionManager<NoTls>>`. 
+//! To use this module, you need to implement the `AuthRepository` trait in your application and initialize it with a `Pool<PostgresConnectionManager<NoTls>>`.
 //! Below is an example of how to use the `AuthRepositoryImpl` struct:
 //!
 //! ```rust
@@ -57,26 +57,21 @@
 //!
 //! In this example, we create an instance of `AuthRepositoryImpl`, call the `guest_login` method with a login request, and handle the result.
 
-
-use async_trait::async_trait;
-use bcrypt::verify;
-use tokio_postgres::{NoTls, Transaction};
-use bb8_postgres::{PostgresConnectionManager, bb8::Pool};
-use argon2::{
-    password_hash::{
-        rand_core::OsRng,
-        PasswordHash,
-        PasswordHasher,
-        PasswordVerifier,
-        SaltString
-    },
-    Argon2
-};
 use crate::api::jwt::jwt;
-use crate::db::models::{auth::{LoginRequest, SignupRequest}, user::User};
+use crate::db::models::{
+    auth::{LoginRequest, SignupRequest},
+    user::User,
+};
 use crate::errors::auth_error::AuthError;
 use crate::{app_log, error_log};
-
+use argon2::{
+    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    Argon2,
+};
+use async_trait::async_trait;
+use bb8_postgres::{bb8::Pool, PostgresConnectionManager};
+use bcrypt::verify;
+use tokio_postgres::{NoTls, Transaction};
 
 #[async_trait]
 pub trait AuthRepository: Send + Sync {
@@ -86,7 +81,7 @@ pub trait AuthRepository: Send + Sync {
 }
 
 pub struct AuthRepositoryImpl {
-    pool: Pool<PostgresConnectionManager<NoTls>>
+    pool: Pool<PostgresConnectionManager<NoTls>>,
 }
 
 impl AuthRepositoryImpl {
@@ -117,14 +112,12 @@ impl AuthRepository for AuthRepositoryImpl {
     /// * `Ok(Some(User))` - Returns user details if the authentication is successful.
     /// * `Ok(None)` - Returns `None` if the user does not exist or authentication fails.
     /// * `Err(AuthError)` - Returns an error if something goes wrong during the process.
-    async fn guest_login(
-        &self,
-        req: &LoginRequest,
-    ) -> Result<Option<User>, AuthError> {
+    async fn guest_login(&self, req: &LoginRequest) -> Result<Option<User>, AuthError> {
         let conn = self.pool.get().await?;
 
-        let rows = conn.query(
-            r#"
+        let rows = conn
+            .query(
+                r#"
                 SELECT 
                     users.id,
                     user_profiles.name,
@@ -143,8 +136,9 @@ impl AuthRepository for AuthRepositoryImpl {
                 WHERE
                     email = $1;
             "#,
-            &[&req.email]
-        ).await?;
+                &[&req.email],
+            )
+            .await?;
 
         if rows.is_empty() {
             return Ok(None);
@@ -169,7 +163,10 @@ impl AuthRepository for AuthRepositoryImpl {
                 Ok(Some(user_data))
             }
             Err(error) => {
-                error_log!("[auth_repository] - [guest_login] - [message: error = {}]", error);
+                error_log!(
+                    "[auth_repository] - [guest_login] - [message: error = {}]",
+                    error
+                );
                 Err(AuthError::TokenCreationError(error))
             }
         }
@@ -186,13 +183,10 @@ impl AuthRepository for AuthRepositoryImpl {
     ///
     /// * `Ok(())` - Returns `()` if the user was successfully created.
     /// * `Err(AuthError)` - Returns an error if something goes wrong during the process.
-    async fn signup(
-        &self,
-        req: &SignupRequest,
-        tx: &mut Transaction<'_>
-    ) -> Result<(), AuthError> {
-        let result_row = tx.query_one(
-            r#"
+    async fn signup(&self, req: &SignupRequest, tx: &mut Transaction<'_>) -> Result<(), AuthError> {
+        let result_row = tx
+            .query_one(
+                r#"
                 INSERT INTO users (
                     created_at,
                     updated_at
@@ -202,8 +196,9 @@ impl AuthRepository for AuthRepositoryImpl {
                 )
                 RETURNING id;
             "#,
-            &[]
-        ).await?;
+                &[],
+            )
+            .await?;
 
         let user_id: i32 = result_row.get("id");
 
@@ -223,12 +218,15 @@ impl AuthRepository for AuthRepositoryImpl {
                     CURRENT_TIMESTAMP
                 );
             "#,
-            &[&user_id, &req.name, &req.email]
-        ).await?;
+            &[&user_id, &req.name, &req.email],
+        )
+        .await?;
 
         let argon2 = Argon2::default();
         let salt = SaltString::generate(&mut OsRng);
-        let hashed_password = argon2.hash_password(&req.password.as_bytes(), &salt)?.to_string();
+        let hashed_password = argon2
+            .hash_password(&req.password.as_bytes(), &salt)?
+            .to_string();
 
         tx.execute(
             r#"
@@ -244,8 +242,9 @@ impl AuthRepository for AuthRepositoryImpl {
                     CURRENT_TIMESTAMP
                 );
             "#,
-            &[&user_id, &hashed_password]
-        ).await?;
+            &[&user_id, &hashed_password],
+        )
+        .await?;
 
         Ok(())
     }
@@ -261,14 +260,12 @@ impl AuthRepository for AuthRepositoryImpl {
     /// * `Ok(Some(User))` - Returns user details if the authentication is successful.
     /// * `Ok(None)` - Returns `None` if the user does not exist or authentication fails.
     /// * `Err(AuthError)` - Returns an error if something goes wrong during the process.
-    async fn login(
-        &self,
-        req: &LoginRequest
-    ) -> Result<Option<User>, AuthError> {
+    async fn login(&self, req: &LoginRequest) -> Result<Option<User>, AuthError> {
         let conn = self.pool.get().await?;
 
-        let rows = conn.query(
-            r#"
+        let rows = conn
+            .query(
+                r#"
                 SELECT 
                     users.id,
                     user_profiles.name,
@@ -288,8 +285,9 @@ impl AuthRepository for AuthRepositoryImpl {
                     user_profiles.name = $1
                     AND user_profiles.email = $2;
             "#,
-            &[&req.name, &req.email]
-        ).await?;
+                &[&req.name, &req.email],
+            )
+            .await?;
 
         // Return None if no user is found
         if rows.is_empty() {
@@ -306,7 +304,10 @@ impl AuthRepository for AuthRepositoryImpl {
         let parsed_hash = PasswordHash::new(&hashed_password)?;
 
         // Return None if password does not match
-        if argon2.verify_password(req.password.as_bytes(), &parsed_hash).is_err() {
+        if argon2
+            .verify_password(req.password.as_bytes(), &parsed_hash)
+            .is_err()
+        {
             error_log!("[auth_repository] - [login] - [message: Authentication Failed]");
             return Ok(None);
         };

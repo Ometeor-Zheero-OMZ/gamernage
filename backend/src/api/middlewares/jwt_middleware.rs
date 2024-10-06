@@ -45,13 +45,13 @@
 //! }
 //! ```
 
-use actix_web::{body::EitherBody, dev};
 use actix_service::Service;
+use actix_web::{body::EitherBody, dev};
 use actix_web::{
     dev::{ServiceRequest, ServiceResponse, Transform},
     Error, HttpResponse,
 };
-use futures::future::{ok, Ready, LocalBoxFuture};
+use futures::future::{ok, LocalBoxFuture, Ready};
 
 use crate::api::jwt::jwt;
 
@@ -63,10 +63,10 @@ use crate::api::jwt::jwt;
 pub struct JwtMiddleware;
 
 impl<S, B> Transform<S, ServiceRequest> for JwtMiddleware
-    where
-        S: Service<ServiceRequest, Response=ServiceResponse<B>, Error=Error>,
-        S::Future: 'static,
-        B: 'static,
+where
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
+    S::Future: 'static,
+    B: 'static,
 {
     type Response = ServiceResponse<EitherBody<B>>;
     type Error = Error;
@@ -104,7 +104,6 @@ where
 
     dev::forward_ready!(service);
 
-
     /// Processes the incoming request, applying JWT authentication.
     ///
     /// If the request path is not exempt from authentication, it verifies the JWT token. If the token is invalid
@@ -123,7 +122,7 @@ where
             "/api/auth/guest_login",
             "/api/auth/signup",
             "/api/auth/login",
-            "/api/auth/current_user"
+            "/api/auth/current_user",
         ];
 
         let is_exempt = exempt_paths.contains(&request.path());
@@ -131,24 +130,20 @@ where
         if !is_exempt {
             let is_logged_in = match jwt::verify(&request) {
                 Ok(_user_info) => true,
-                Err(_) => false
+                Err(_) => false,
             };
-    
+
             if !is_logged_in {
                 let (request, _pl) = request.into_parts();
-    
-                let response = HttpResponse::Unauthorized()
-                    .finish()
-                    .map_into_right_body();
-    
+
+                let response = HttpResponse::Unauthorized().finish().map_into_right_body();
+
                 return Box::pin(async { Ok(ServiceResponse::new(request, response)) });
             }
         }
 
         let res = self.service.call(request);
 
-        Box::pin(async move {
-            res.await.map(ServiceResponse::map_into_left_body)
-        })
+        Box::pin(async move { res.await.map(ServiceResponse::map_into_left_body) })
     }
 }

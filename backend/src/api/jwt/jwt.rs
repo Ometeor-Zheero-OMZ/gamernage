@@ -6,7 +6,7 @@
 //!
 //! ## Overview
 //!
-//! The `jwt` module includes functions for creating JWTs with user information, decoding JWTs to extract claims, 
+//! The `jwt` module includes functions for creating JWTs with user information, decoding JWTs to extract claims,
 //! and verifying JWTs from HTTP requests. It uses a fixed secret key for signing the tokens and sets an expiration
 //! time for the tokens. The module also provides a trait `RequestHeaders` to handle different types of requests,
 //! allowing extraction of headers for token verification.
@@ -42,10 +42,12 @@
 //! }
 //! ```
 
-use actix_web::{HttpRequest, http::header::HeaderMap, dev::ServiceRequest};
-use jsonwebtoken::{encode, decode, Header, Algorithm, EncodingKey, DecodingKey, Validation, TokenData};
-use serde::{Serialize, Deserialize};
-use std::time::{SystemTime, Duration};
+use actix_web::{dev::ServiceRequest, http::header::HeaderMap, HttpRequest};
+use jsonwebtoken::{
+    decode, encode, Algorithm, DecodingKey, EncodingKey, Header, TokenData, Validation,
+};
+use serde::{Deserialize, Serialize};
+use std::time::{Duration, SystemTime};
 
 use crate::api::utils::message::SVR_MSG;
 use crate::{app_log, error_log};
@@ -101,7 +103,6 @@ impl RequestHeaders for ServiceRequest {
 /// let token = jwt::create_token(&email, &id)?;
 /// ```
 pub fn create_token(email: &str, id: &i32) -> Result<String, jsonwebtoken::errors::Error> {
-
     // トークンの有効期限 10日
     let days = 60 * 60 * 24 * 10;
 
@@ -109,13 +110,16 @@ pub fn create_token(email: &str, id: &i32) -> Result<String, jsonwebtoken::error
     let claims = Claims {
         id: id.to_owned(),
         sub: email.to_owned(),
-        exp: expiration.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as usize,
+        exp: expiration
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as usize,
     };
 
     encode(
         &Header::default(),
         &claims,
-        &EncodingKey::from_secret("secret".as_ref())
+        &EncodingKey::from_secret("secret".as_ref()),
     )
 }
 
@@ -141,7 +145,7 @@ pub fn decode_token(token: &str) -> Result<TokenData<Claims>, jsonwebtoken::erro
     decode::<Claims>(
         token,
         &DecodingKey::from_secret("secret".as_ref()),
-        &Validation::new(Algorithm::HS256)
+        &Validation::new(Algorithm::HS256),
     )
 }
 
@@ -160,7 +164,7 @@ pub fn decode_token(token: &str) -> Result<TokenData<Claims>, jsonwebtoken::erro
 /// ```rust
 /// let claims = jwt::verify(&req)?;
 /// ```
-pub fn verify <R: RequestHeaders>(req: &R)  -> Result<Claims, String> {
+pub fn verify<R: RequestHeaders>(req: &R) -> Result<Claims, String> {
     // リクエストヘッダーから Bearer トークンを抽出できる場合
     if let Some(auth_header) = req.get_headers().get("Authorization") {
         if let Ok(auth_str) = auth_header.to_str() {
@@ -172,7 +176,7 @@ pub fn verify <R: RequestHeaders>(req: &R)  -> Result<Claims, String> {
                 match decode_token(token) {
                     Ok(user_info) => {
                         return Ok(user_info.claims);
-                    },
+                    }
                     Err(error) => {
                         error_log!("[jwt] - [verify] error = {}", error);
                         return Err(error.to_string());
@@ -181,5 +185,8 @@ pub fn verify <R: RequestHeaders>(req: &R)  -> Result<Claims, String> {
             }
         }
     }
-    return Err(SVR_MSG.get("TOKEN_NOT_FOUND_IN_REQUEST_HEADER_MSG").unwrap_or(&"").to_string());
+    return Err(SVR_MSG
+        .get("TOKEN_NOT_FOUND_IN_REQUEST_HEADER_MSG")
+        .unwrap_or(&"")
+        .to_string());
 }

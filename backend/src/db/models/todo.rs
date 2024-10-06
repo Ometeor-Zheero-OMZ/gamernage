@@ -1,7 +1,7 @@
 //! TODO Model
 
-use serde::{Deserialize, Serialize};
 use chrono::NaiveDateTime;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct TodoItem {
@@ -58,10 +58,10 @@ pub struct ResponseUpdateTodoItem {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct RequestDeleteTodoItem {
-    pub id: i32
+    pub id: i32,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct RequestCompleteTodoItem {
-    pub id: i32
+    pub id: i32,
 }

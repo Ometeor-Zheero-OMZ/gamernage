@@ -1,9 +1,8 @@
 //! User Service Module
 
-use tokio_postgres::Error;
 use crate::api::jwt::jwt::Claims;
 use crate::{app_log, error_log};
-
+use tokio_postgres::Error;
 
 /// Retrieves the user ID from the database using the user's email address.
 ///
@@ -22,10 +21,14 @@ use crate::{app_log, error_log};
 /// ```rust
 /// let user_id = get_user_id(&user, &mut tx).await?;
 /// ```
-pub async fn get_user_id(user: &Claims, transaction: &tokio_postgres::Transaction<'_>) -> Result<i32, Error> {
+pub async fn get_user_id(
+    user: &Claims,
+    transaction: &tokio_postgres::Transaction<'_>,
+) -> Result<i32, Error> {
     // ユーザーの存在チェック
-    let row_result = transaction.query_one(
-        r#"
+    let row_result = transaction
+        .query_one(
+            r#"
             SELECT
                 user_id
             FROM
@@ -33,17 +36,21 @@ pub async fn get_user_id(user: &Claims, transaction: &tokio_postgres::Transactio
             WHERE
                 email = $1
         "#,
-        &[&user.sub]
-    ).await;
+            &[&user.sub],
+        )
+        .await;
 
     match row_result {
         Ok(user_row) => {
             let user_id = user_row.get("user_id");
 
             Ok(user_id)
-        },
+        }
         Err(error) => {
-            error_log!("[user_service] - [get_user_id] - [message: error = {}]", error);
+            error_log!(
+                "[user_service] - [get_user_id] - [message: error = {}]",
+                error
+            );
             Err(error)
         }
     }

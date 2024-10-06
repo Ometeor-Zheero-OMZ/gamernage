@@ -1,8 +1,8 @@
-use std::fmt;
-use bb8_postgres::bb8;
-use tokio_postgres;
 use argon2;
+use bb8_postgres::bb8;
 use jsonwebtoken;
+use std::fmt;
+use tokio_postgres;
 
 #[derive(Debug)]
 pub enum TodoError {

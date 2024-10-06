@@ -1,7 +1,7 @@
 //! # Database Pool Module
 //!
 //! # Overview
-//! 
+//!
 //! This module provides functionality for creating a connection pool for PostgreSQL using `bb8_postgres` and `tokio_postgres`.
 //! The connection pool is configured to manage connections to the PostgreSQL database and handle connection pooling efficiently.
 //!
@@ -12,7 +12,7 @@
 //! ## Configuration
 //! The PostgreSQL connection settings are retrieved from environment variables through the `get_config` function in the `config` module.
 
-use bb8_postgres::{PostgresConnectionManager, bb8::Pool};
+use bb8_postgres::{bb8::Pool, PostgresConnectionManager};
 use tokio_postgres::NoTls;
 
 /// Asynchronously creates and returns a connection pool for PostgreSQL.
@@ -30,7 +30,7 @@ use tokio_postgres::NoTls;
 /// ```no_run
 /// let pool = get_db_pool().await;
 /// ```
-pub async fn get_db_pool () -> Pool<PostgresConnectionManager<NoTls>> {
+pub async fn get_db_pool() -> Pool<PostgresConnectionManager<NoTls>> {
     let config = super::config::get_config();
     let pg_mgr = PostgresConnectionManager::new(config, NoTls);
     let pool = Pool::builder().max_size(100).build(pg_mgr).await.unwrap();

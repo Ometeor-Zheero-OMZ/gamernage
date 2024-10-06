@@ -1,5 +1,5 @@
 //! Message Manager Module
-//! 
+//!
 //! This module provides a centralized place for storing and managing server, database, and environment variable related messages.
 //! It uses `lazy_static` to create static instances of `HashMap`s for various types of messages that can be used throughout the application.
 
@@ -12,7 +12,10 @@ lazy_static! {
         let mut map = HashMap::new();
         map.insert("SVR_BUILD_SUCCESS_MSG", "🚀 Server build succeeded");
         map.insert("SVR_BUILD_FAILURE_MSG", "🔥 Server build failed.");
-        map.insert("TOKEN_NOT_FOUND_IN_REQUEST_HEADER_MSG", "Authentication token not found in request header.");
+        map.insert(
+            "TOKEN_NOT_FOUND_IN_REQUEST_HEADER_MSG",
+            "Authentication token not found in request header.",
+        );
 
         map
     };
@@ -21,9 +24,9 @@ lazy_static! {
 // Database messages
 lazy_static! {
     /// A static `HashMap` that holds database-related messages.
-    /// 
+    ///
     /// # Messages
-    /// 
+    ///
     /// * `DB_CONNECTION_SUCCESS_MSG` - Message indicating successful database connection.
     /// * `DB_CONNECTION_FAILURE_MSG` - Message indicating failure in database connection.
     /// * `TRANSACTION_COMMIT_FAILURE_MSG` - Message indicating an error occurred during transaction commit.
@@ -56,9 +59,9 @@ lazy_static! {
 // Environment variable messages
 lazy_static! {
     /// A static `HashMap` that holds messages related to unset environment variables.
-    /// 
+    ///
     /// # Messages
-    /// 
+    ///
     /// * `NO_SET_ENV_VAR_FRONTEND_PORT` - Message indicating that the `FRONTEND_PORT` environment variable is not set.
     /// * `NO_SET_ENV_VAR_DATABASE_PORT` - Message indicating that the `DATABASE_PORT` environment variable is not set.
     /// * `NO_SET_ENV_VAR_DATABASE_URL` - Message indicating that the `DATABASE_URL` environment variable is not set.

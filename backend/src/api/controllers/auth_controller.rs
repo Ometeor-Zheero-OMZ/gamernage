@@ -18,29 +18,28 @@
 //! - `crate::errors::auth_error::AuthError`: Authentication errors.
 //! - `crate::libraries::app_state::AppState`: Application state.
 
-
-use actix_web::{HttpResponse, Responder, HttpRequest, web};
-use postgres::error::SqlState;
-use validator::Validate;
 use crate::api::jwt::jwt;
 use crate::db::models::auth::{LoginRequest, SignupRequest};
 use crate::errors::auth_error::AuthError;
 use crate::libraries::app_state::AppState;
-use crate::{app_log, success_log, error_log};
+use crate::{app_log, error_log, success_log};
+use actix_web::{web, HttpRequest, HttpResponse, Responder};
+use postgres::error::SqlState;
+use validator::Validate;
 
 /// Handles guest login.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `req` - JSON request data of type `LoginRequest`
 /// * `app_state` - Application state
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns the authenticated user data if successful. Returns 401 if unauthorized.
 pub async fn guest_login(
     req: web::Json<LoginRequest>,
-    app_state: web::Data<AppState>
+    app_state: web::Data<AppState>,
 ) -> impl Responder {
     if let Err(_validation_errors) = req.validate() {
         return HttpResponse::BadRequest().finish();
@@ -50,28 +49,24 @@ pub async fn guest_login(
 
     match auth_service.guest_login(&req).await {
         Ok(Some(user_data)) => HttpResponse::Ok().json(user_data),
-        Ok(None) => {
-            HttpResponse::Unauthorized().finish()
-        }
-        Err(_auth_error) => {
-            HttpResponse::InternalServerError().finish()
-        }
+        Ok(None) => HttpResponse::Unauthorized().finish(),
+        Err(_auth_error) => HttpResponse::InternalServerError().finish(),
     }
 }
 
 /// Handles user signup.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `req` - JSON request data of type `SignupRequest`
 /// * `app_state` - Application state
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns 200 OK if signup is successful. Returns 409 Conflict if the user already exists.
 pub async fn signup(
     req: web::Json<SignupRequest>,
-    app_state: web::Data<AppState>
+    app_state: web::Data<AppState>,
 ) -> impl Responder {
     if let Err(_validation_errors) = req.validate() {
         return HttpResponse::BadRequest().finish();
@@ -87,17 +82,26 @@ pub async fn signup(
         Err(AuthError::DatabaseError(ref error)) => {
             if let Some(db_error) = error.as_db_error() {
                 if db_error.code() == &SqlState::UNIQUE_VIOLATION {
-                    error_log!("[auth_controller] - [signup] - [message: db_error = {}]", db_error);
+                    error_log!(
+                        "[auth_controller] - [signup] - [message: db_error = {}]",
+                        db_error
+                    );
                     // return HttpResponse::new(StatusCode::CONFLICT);
                     return HttpResponse::Conflict().finish();
                 }
             }
 
-            error_log!("[auth_controller] - [signup] - [message: error = {}]", error);
+            error_log!(
+                "[auth_controller] - [signup] - [message: error = {}]",
+                error
+            );
             HttpResponse::InternalServerError().finish()
         }
         Err(auth_error) => {
-            error_log!("[auth_controller] - [signup] - [message: auth_error = {}]", auth_error);
+            error_log!(
+                "[auth_controller] - [signup] - [message: auth_error = {}]",
+                auth_error
+            );
             HttpResponse::InternalServerError().finish()
         }
     }
@@ -148,19 +152,16 @@ pub async fn signup(
 // }
 
 /// Handles user login.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `req` - JSON request data of type `LoginRequest`
 /// * `app_state` - Application state
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns the authenticated user data if successful. Returns 401 if unauthorized.
-pub async fn login(
-    req: web::Json<LoginRequest>,
-    app_state: web::Data<AppState>
-) -> impl Responder {
+pub async fn login(req: web::Json<LoginRequest>, app_state: web::Data<AppState>) -> impl Responder {
     if let Err(_validation_errors) = req.validate() {
         return HttpResponse::BadRequest().finish();
     }
@@ -174,26 +175,32 @@ pub async fn login(
             HttpResponse::Unauthorized().finish()
         }
         Err(auth_error) => {
-            error_log!("[auth_controller] - [login] - [message: auth_error = {}]", auth_error);
+            error_log!(
+                "[auth_controller] - [login] - [message: auth_error = {}]",
+                auth_error
+            );
             HttpResponse::InternalServerError().finish()
         }
     }
 }
 
 /// Returns the currently authenticated user's data.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `req` - HTTP request
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns the authenticated user's data if the request is valid. Returns 401 if unauthorized.
 pub async fn current_user(req: HttpRequest) -> impl Responder {
     match jwt::verify(&req) {
         Ok(user_info) => HttpResponse::Ok().json(user_info),
         Err(error) => {
-            error_log!("[auth_controller] - [current_user] - [message: error = {}]", error);
+            error_log!(
+                "[auth_controller] - [current_user] - [message: error = {}]",
+                error
+            );
             HttpResponse::Unauthorized().finish()
         }
     }

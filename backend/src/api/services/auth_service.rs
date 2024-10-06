@@ -1,5 +1,5 @@
 //! Authentication Service Module
-//! 
+//!
 //! This module provides an implementation of the `AuthService` trait for handling authentication-related operations.
 //! It includes methods for guest login, user signup, and user login. The service interacts with the authentication
 //! repository and uses a PostgreSQL connection pool for database transactions.
@@ -12,9 +12,12 @@ use postgres::NoTls;
 use validator::Validate;
 
 use crate::constants::custom_type::AuthRepositoryArc;
-use crate::db::models::{auth::{LoginRequest, SignupRequest}, user::User};
-use crate::{app_log, error_log};
+use crate::db::models::{
+    auth::{LoginRequest, SignupRequest},
+    user::User,
+};
 use crate::errors::auth_error::AuthError;
+use crate::{app_log, error_log};
 
 #[async_trait]
 pub trait AuthService: Send + Sync {
@@ -29,35 +32,41 @@ pub struct AuthServiceImpl {
     auth_repository: AuthRepositoryArc,
 
     /// The PostgreSQL connection pool used for database transactions.
-    pool: Arc<Pool<PostgresConnectionManager<NoTls>>>
+    pool: Arc<Pool<PostgresConnectionManager<NoTls>>>,
 }
 
 impl AuthServiceImpl {
     /// Creates a new instance of `AuthServiceImpl`.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `auth_repository` - The authentication repository.
     /// * `pool` - The PostgreSQL connection pool.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// A new instance of `AuthServiceImpl`.
-    pub fn new(auth_repository: AuthRepositoryArc, pool: Pool<PostgresConnectionManager<NoTls>>) -> Self {
-        AuthServiceImpl { auth_repository, pool: Arc::new(pool) }
+    pub fn new(
+        auth_repository: AuthRepositoryArc,
+        pool: Pool<PostgresConnectionManager<NoTls>>,
+    ) -> Self {
+        AuthServiceImpl {
+            auth_repository,
+            pool: Arc::new(pool),
+        }
     }
 }
 
 #[async_trait]
 impl AuthService for AuthServiceImpl {
     /// Handles guest login requests.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `req` - The login request containing guest credentials.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * `Ok(Some(User))` - If the guest login is successful and a user is found.
     /// * `Ok(None)` - If the guest login is successful but no user is found.
     /// * `Err(AuthError)` - If an error occurs during the operation.
@@ -65,18 +74,18 @@ impl AuthService for AuthServiceImpl {
         let user_opt = self.auth_repository.guest_login(req).await?;
         match user_opt {
             Some(user) => Ok(Some(user)),
-            None => Ok(None)
+            None => Ok(None),
         }
     }
 
     /// Handles user signup requests.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `req` - The signup request containing user details.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * `Ok(())` - If the signup operation is successful.
     /// * `Err(AuthError)` - If an error occurs during the operation, including validation errors.
     async fn signup(&self, req: &SignupRequest) -> Result<(), AuthError> {
@@ -93,7 +102,10 @@ impl AuthService for AuthServiceImpl {
             }
             Err(auth_error) => {
                 tx.rollback().await.map_err(AuthError::from)?;
-                error_log!("[auth_service] - [signup] - [message: auth_error = {}]", auth_error);
+                error_log!(
+                    "[auth_service] - [signup] - [message: auth_error = {}]",
+                    auth_error
+                );
 
                 Err(auth_error)
             }
@@ -101,13 +113,13 @@ impl AuthService for AuthServiceImpl {
     }
 
     /// Handles user login requests.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `req` - The login request containing user credentials.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * `Ok(Some(User))` - If the login is successful and a user is found.
     /// * `Ok(None)` - If the login is successful but no user is found.
     /// * `Err(AuthError)` - If an error occurs during the operation, including validation errors.

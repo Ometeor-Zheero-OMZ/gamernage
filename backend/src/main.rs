@@ -1,5 +1,5 @@
 //! # Actix Web Application
-//! This is an Actix Web-based application that sets up a server with CORS enabled and JWT authentication middleware. 
+//! This is an Actix Web-based application that sets up a server with CORS enabled and JWT authentication middleware.
 //! It connects to a PostgreSQL database and initializes application state.
 //!
 //! ## Components:
@@ -26,7 +26,7 @@ mod tests;
 const PROJECT_PATH: &'static str = env!("CARGO_MANIFEST_DIR");
 
 /// Entry point for the Actix Web application.
-/// 
+///
 /// The main function is responsible for initializing the logger, loading environment variables,
 /// establishing a connection pool to the database, setting up the application state, and starting the HTTP server.
 ///

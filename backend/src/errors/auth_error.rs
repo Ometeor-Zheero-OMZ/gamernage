@@ -1,8 +1,8 @@
-use std::fmt;
-use bb8_postgres::bb8;
-use tokio_postgres;
 use argon2;
+use bb8_postgres::bb8;
 use jsonwebtoken;
+use std::fmt;
+use tokio_postgres;
 
 #[derive(Debug)]
 pub enum AuthError {
@@ -10,7 +10,7 @@ pub enum AuthError {
     PoolError(bb8::RunError<tokio_postgres::Error>),
     HashingError(argon2::password_hash::Error),
     TokenCreationError(jsonwebtoken::errors::Error),
-    ValidationError(validator::ValidationErrors)
+    ValidationError(validator::ValidationErrors),
 }
 
 impl fmt::Display for AuthError {

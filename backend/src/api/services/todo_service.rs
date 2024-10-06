@@ -1,29 +1,45 @@
 //! Todo Service Module
-//! 
+//!
 //! This module provides an implementation of the `TodoService` trait for handling operations related to todo items.
 //! It includes methods for retrieving, creating, updating, deleting, and completing todo items. The service interacts
 //! with the todo repository and uses a PostgreSQL connection pool for database transactions.
 
+use crate::api::jwt::jwt::Claims;
+use crate::constants::custom_type::TodoRepositoryArc;
+use crate::db::models::todo::*;
+use crate::errors::todo_error::TodoError;
+use crate::{app_log, error_log};
 use async_trait::async_trait;
 use bb8_postgres::bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use postgres::NoTls;
 use std::sync::Arc;
-use crate::api::jwt::jwt::Claims;
-use crate::constants::custom_type::TodoRepositoryArc;
-use crate::db::models::todo::*;
-use crate::{app_log, error_log};
-use crate::errors::todo_error::TodoError;
 
 use super::user_service::get_user_id;
 
 #[async_trait]
 pub trait TodoService: Send + Sync {
     async fn get_todos(&self, user: Claims) -> Result<Vec<TodoItem>, TodoError>;
-    async fn create_todo(&self, user: Claims, todo_req: &RequestCreateTodoItem) -> Result<ResponseCreateTodoItem, TodoError>;
-    async fn update_todo(&self, user: Claims, todo_req: &RequestUpdateTodoItem) -> Result<(), TodoError>;
-    async fn delete_todo(&self, user: Claims, todo_req: &RequestDeleteTodoItem) -> Result<(), TodoError>;
-    async fn complete_todo(&self, user: Claims, todo_req: &RequestCompleteTodoItem) -> Result<(), TodoError>;
+    async fn create_todo(
+        &self,
+        user: Claims,
+        todo_req: &RequestCreateTodoItem,
+    ) -> Result<ResponseCreateTodoItem, TodoError>;
+    async fn update_todo(
+        &self,
+        user: Claims,
+        todo_req: &RequestUpdateTodoItem,
+    ) -> Result<(), TodoError>;
+    async fn delete_todo(
+        &self,
+        user: Claims,
+        todo_req: &RequestDeleteTodoItem,
+    ) -> Result<(), TodoError>;
+    async fn complete_todo(
+        &self,
+        user: Claims,
+        todo_req: &RequestCompleteTodoItem,
+    ) -> Result<(), TodoError>;
 }
 
 /// Implementation of the `TodoService` trait.
@@ -32,35 +48,41 @@ pub struct TodoServiceImpl {
     todo_repository: TodoRepositoryArc,
 
     /// The PostgreSQL connection pool used for database transactions.
-    pool: Arc<Pool<PostgresConnectionManager<NoTls>>>
+    pool: Arc<Pool<PostgresConnectionManager<NoTls>>>,
 }
 
 impl TodoServiceImpl {
     /// Creates a new instance of `TodoServiceImpl`.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `todo_repository` - The todo repository.
     /// * `pool` - The PostgreSQL connection pool.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// A new instance of `TodoServiceImpl`.
-    pub fn new(todo_repository: TodoRepositoryArc, pool: Pool<PostgresConnectionManager<NoTls>>) -> Self {
-        TodoServiceImpl { todo_repository, pool: Arc::new(pool) }
+    pub fn new(
+        todo_repository: TodoRepositoryArc,
+        pool: Pool<PostgresConnectionManager<NoTls>>,
+    ) -> Self {
+        TodoServiceImpl {
+            todo_repository,
+            pool: Arc::new(pool),
+        }
     }
 }
 
 #[async_trait]
 impl TodoService for TodoServiceImpl {
     /// Retrieves all todo items for a given user.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `user` - The authenticated user claims, including user ID.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * `Ok(Vec<TodoItem>)` - If the retrieval is successful.
     /// * `Err(TodoError)` - If an error occurs during the operation.
     async fn get_todos(&self, user: Claims) -> Result<Vec<TodoItem>, TodoError> {
@@ -73,7 +95,8 @@ impl TodoService for TodoServiceImpl {
         let result = async {
             let user_id = get_user_id(&user, &mut tx).await?;
             todo_repository.get_todos(user_id, &mut tx).await
-        }.await;
+        }
+        .await;
 
         match result {
             Ok(value) => {
@@ -82,7 +105,10 @@ impl TodoService for TodoServiceImpl {
             }
             Err(todo_error) => {
                 tx.rollback().await.map_err(TodoError::from)?;
-                error_log!("[todo_service] - [get_todos] - [message: todo_error = {}]", todo_error);
+                error_log!(
+                    "[todo_service] - [get_todos] - [message: todo_error = {}]",
+                    todo_error
+                );
 
                 Err(todo_error)
             }
@@ -90,17 +116,21 @@ impl TodoService for TodoServiceImpl {
     }
 
     /// Creates a new todo item for a given user.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `user` - The authenticated user claims, including user ID.
     /// * `todo_req` - The request containing details of the todo item to be created.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * `Ok(ResponseCreateTodoItem)` - If the creation is successful.
     /// * `Err(TodoError)` - If an error occurs during the operation.
-    async fn create_todo(&self, user: Claims, todo_req: &RequestCreateTodoItem) -> Result<ResponseCreateTodoItem, TodoError> {
+    async fn create_todo(
+        &self,
+        user: Claims,
+        todo_req: &RequestCreateTodoItem,
+    ) -> Result<ResponseCreateTodoItem, TodoError> {
         let todo_repository = self.todo_repository.clone();
 
         let pool = self.pool.clone();
@@ -109,8 +139,11 @@ impl TodoService for TodoServiceImpl {
 
         let result = async {
             let user_id = get_user_id(&user, &mut tx).await?;
-            todo_repository.create_todo(user_id, &todo_req, &mut tx).await
-        }.await;
+            todo_repository
+                .create_todo(user_id, &todo_req, &mut tx)
+                .await
+        }
+        .await;
 
         match result {
             Ok(value) => {
@@ -119,7 +152,10 @@ impl TodoService for TodoServiceImpl {
             }
             Err(todo_error) => {
                 tx.rollback().await.map_err(TodoError::from)?;
-                error_log!("[todo_service] - [create_todo] - [message: todo_error = {}]", todo_error);
+                error_log!(
+                    "[todo_service] - [create_todo] - [message: todo_error = {}]",
+                    todo_error
+                );
 
                 Err(todo_error)
             }
@@ -127,17 +163,21 @@ impl TodoService for TodoServiceImpl {
     }
 
     /// Updates an existing todo item for a given user.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `user` - The authenticated user claims, including user ID.
     /// * `todo_req` - The request containing updated details of the todo item.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * `Ok(())` - If the update is successful.
     /// * `Err(TodoError)` - If an error occurs during the operation.
-    async fn update_todo(&self, user: Claims, todo_req: &RequestUpdateTodoItem) -> Result<(), TodoError> {
+    async fn update_todo(
+        &self,
+        user: Claims,
+        todo_req: &RequestUpdateTodoItem,
+    ) -> Result<(), TodoError> {
         let todo_repository = self.todo_repository.clone();
 
         let pool = self.pool.clone();
@@ -147,7 +187,8 @@ impl TodoService for TodoServiceImpl {
         let result = async {
             let _user_id = get_user_id(&user, &mut tx).await?;
             todo_repository.update_todo(&todo_req, &mut tx).await
-        }.await;
+        }
+        .await;
 
         match result {
             Ok(_) => {
@@ -156,7 +197,10 @@ impl TodoService for TodoServiceImpl {
             }
             Err(todo_error) => {
                 tx.rollback().await.map_err(TodoError::from)?;
-                error_log!("[todo_service] - [update_todo] - [message: todo_error = {}]", todo_error);
+                error_log!(
+                    "[todo_service] - [update_todo] - [message: todo_error = {}]",
+                    todo_error
+                );
 
                 Err(todo_error)
             }
@@ -164,17 +208,21 @@ impl TodoService for TodoServiceImpl {
     }
 
     /// Deletes an existing todo item for a given user.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `user` - The authenticated user claims, including user ID.
     /// * `todo_req` - The request containing details of the todo item to be deleted.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * `Ok(())` - If the deletion is successful.
     /// * `Err(TodoError)` - If an error occurs during the operation.
-    async fn delete_todo(&self, user: Claims, todo_req: &RequestDeleteTodoItem) -> Result<(), TodoError> {
+    async fn delete_todo(
+        &self,
+        user: Claims,
+        todo_req: &RequestDeleteTodoItem,
+    ) -> Result<(), TodoError> {
         let todo_repository = self.todo_repository.clone();
 
         let pool = self.pool.clone();
@@ -184,7 +232,8 @@ impl TodoService for TodoServiceImpl {
         let result = async {
             let _user_id = get_user_id(&user, &mut tx).await?;
             todo_repository.delete_todo(&todo_req, &mut tx).await
-        }.await;
+        }
+        .await;
 
         match result {
             Ok(_) => {
@@ -193,7 +242,10 @@ impl TodoService for TodoServiceImpl {
             }
             Err(todo_error) => {
                 tx.rollback().await.map_err(TodoError::from)?;
-                error_log!("[todo_service] - [delete_todo] - [message: todo_error = {}]", todo_error);
+                error_log!(
+                    "[todo_service] - [delete_todo] - [message: todo_error = {}]",
+                    todo_error
+                );
 
                 Err(todo_error)
             }
@@ -201,17 +253,21 @@ impl TodoService for TodoServiceImpl {
     }
 
     /// Marks a todo item as complete for a given user.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `user` - The authenticated user claims, including user ID.
     /// * `todo_req` - The request containing details of the todo item to be marked as complete.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * `Ok(())` - If the operation is successful.
     /// * `Err(TodoError)` - If an error occurs during the operation.
-    async fn complete_todo(&self, user: Claims, todo_req: &RequestCompleteTodoItem) -> Result<(), TodoError> {
+    async fn complete_todo(
+        &self,
+        user: Claims,
+        todo_req: &RequestCompleteTodoItem,
+    ) -> Result<(), TodoError> {
         let todo_repository = self.todo_repository.clone();
 
         let pool = self.pool.clone();
@@ -221,7 +277,8 @@ impl TodoService for TodoServiceImpl {
         let result = async {
             let _user_id = get_user_id(&user, &mut tx).await?;
             todo_repository.complete_todo(&todo_req, &mut tx).await
-        }.await;
+        }
+        .await;
 
         match result {
             Ok(_) => {
@@ -230,7 +287,10 @@ impl TodoService for TodoServiceImpl {
             }
             Err(todo_error) => {
                 tx.rollback().await.map_err(TodoError::from)?;
-                error_log!("[todo_service] - [complete_todo] - [messageL todo_error = {}]", todo_error);
+                error_log!(
+                    "[todo_service] - [complete_todo] - [messageL todo_error = {}]",
+                    todo_error
+                );
 
                 Err(todo_error)
             }
