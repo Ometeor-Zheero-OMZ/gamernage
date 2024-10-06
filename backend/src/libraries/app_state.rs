@@ -32,10 +32,13 @@ use postgres::NoTls;
 use std::sync::Arc;
 
 use crate::api::services::auth_service::AuthServiceImpl;
+use crate::api::services::community_service::CommunityServiceImpl;
 use crate::api::services::todo_service::TodoServiceImpl;
 use crate::constants::custom_type::{
-    AuthRepositoryArc, AuthServiceArc, TodoRepositoryArc, TodoServiceArc,
+    AuthRepositoryArc, AuthServiceArc, CommunityRepositoryArc, CommunityServiceArc,
+    TodoRepositoryArc, TodoServiceArc,
 };
+use crate::db::repositories::community_repository::CommunityRepositoryImpl;
 use crate::db::repositories::{
     auth_repository::AuthRepositoryImpl, todo_repository::TodoRepositoryImpl,
 };
@@ -48,6 +51,8 @@ pub struct AppState {
     pub auth_service: AuthServiceArc,
     /// Service for handling todo-related logic.
     pub todo_service: TodoServiceArc,
+
+    pub community_service: CommunityServiceArc,
 }
 
 impl AppState {
@@ -69,14 +74,22 @@ impl AppState {
     pub fn init(pool: &Pool<PostgresConnectionManager<NoTls>>) -> AppState {
         let auth_repository: AuthRepositoryArc = Arc::new(AuthRepositoryImpl::new(pool.clone()));
         let todo_repository: TodoRepositoryArc = Arc::new(TodoRepositoryImpl::new(pool.clone()));
+        let community_repository: CommunityRepositoryArc =
+            Arc::new(CommunityRepositoryImpl::new(pool.clone()));
+
         let auth_service: AuthServiceArc =
             Arc::new(AuthServiceImpl::new(auth_repository.clone(), pool.clone()));
         let todo_service: TodoServiceArc =
             Arc::new(TodoServiceImpl::new(todo_repository.clone(), pool.clone()));
+        let community_service: CommunityServiceArc = Arc::new(CommunityServiceImpl::new(
+            community_repository.clone(),
+            pool.clone(),
+        ));
 
         AppState {
             auth_service,
             todo_service,
+            community_service,
         }
     }
 }
