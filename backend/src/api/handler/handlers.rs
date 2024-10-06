@@ -1,6 +1,6 @@
 //! API Handlers Module
 
-use crate::api::controllers::{auth_controller, todo_controller};
+use crate::api::controllers::{auth_controller, community_controller, todo_controller};
 use actix_web::{web, HttpRequest, HttpResponse, Result, Scope};
 
 /// Returns a 404 status code for requests to non-existent paths.
@@ -73,6 +73,10 @@ pub fn api_scope() -> Scope {
         .route(
             "/todo/change-status",
             web::post().to(todo_controller::complete_todo),
+        )
+        .route(
+            "/create-community",
+            web::post().to(community_controller::create_community),
         )
         // Trigger the handler method for non-existent paths
         .default_service(web::route().to(handler))
