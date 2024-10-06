@@ -78,6 +78,11 @@ pub fn api_scope() -> Scope {
             "/create-community",
             web::post().to(community_controller::create_community),
         )
+        .route(
+            "/community/{id}",
+            web::get().to(community_controller::fetch_community_details)
+        )
+
         // Trigger the handler method for non-existent paths
         .default_service(web::route().to(handler))
 }

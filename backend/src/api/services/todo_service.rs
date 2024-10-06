@@ -90,13 +90,12 @@ impl TodoService for TodoServiceImpl {
 
         let pool = self.pool.clone();
         let mut conn = pool.get().await.map_err(TodoError::from)?;
+
+        let user_id = get_user_id(&user, &mut conn).await?;
+
         let mut tx = conn.transaction().await.map_err(TodoError::from)?;
 
-        let result = async {
-            let user_id = get_user_id(&user, &mut tx).await?;
-            todo_repository.get_todos(user_id, &mut tx).await
-        }
-        .await;
+        let result = todo_repository.get_todos(user_id, &mut tx).await;
 
         match result {
             Ok(value) => {
@@ -135,15 +134,14 @@ impl TodoService for TodoServiceImpl {
 
         let pool = self.pool.clone();
         let mut conn = pool.get().await.map_err(TodoError::from)?;
+
+        let user_id = get_user_id(&user, &mut conn).await?;
+
         let mut tx = conn.transaction().await.map_err(TodoError::from)?;
 
-        let result = async {
-            let user_id = get_user_id(&user, &mut tx).await?;
-            todo_repository
+        let result = todo_repository
                 .create_todo(user_id, &todo_req, &mut tx)
-                .await
-        }
-        .await;
+                .await;
 
         match result {
             Ok(value) => {
@@ -182,13 +180,12 @@ impl TodoService for TodoServiceImpl {
 
         let pool = self.pool.clone();
         let mut conn = pool.get().await.map_err(TodoError::from)?;
+
+        let _user_id = get_user_id(&user, &mut conn).await?;
+
         let mut tx = conn.transaction().await.map_err(TodoError::from)?;
 
-        let result = async {
-            let _user_id = get_user_id(&user, &mut tx).await?;
-            todo_repository.update_todo(&todo_req, &mut tx).await
-        }
-        .await;
+        let result = todo_repository.update_todo(&todo_req, &mut tx).await;
 
         match result {
             Ok(_) => {
@@ -227,13 +224,12 @@ impl TodoService for TodoServiceImpl {
 
         let pool = self.pool.clone();
         let mut conn = pool.get().await.map_err(TodoError::from)?;
+
+        let _user_id = get_user_id(&user, &mut conn).await?;
+
         let mut tx = conn.transaction().await.map_err(TodoError::from)?;
 
-        let result = async {
-            let _user_id = get_user_id(&user, &mut tx).await?;
-            todo_repository.delete_todo(&todo_req, &mut tx).await
-        }
-        .await;
+        let result = todo_repository.delete_todo(&todo_req, &mut tx).await;
 
         match result {
             Ok(_) => {
@@ -272,13 +268,12 @@ impl TodoService for TodoServiceImpl {
 
         let pool = self.pool.clone();
         let mut conn = pool.get().await.map_err(TodoError::from)?;
+
+        let _user_id = get_user_id(&user, &mut conn).await?;
+
         let mut tx = conn.transaction().await.map_err(TodoError::from)?;
 
-        let result = async {
-            let _user_id = get_user_id(&user, &mut tx).await?;
-            todo_repository.complete_todo(&todo_req, &mut tx).await
-        }
-        .await;
+        let result = todo_repository.complete_todo(&todo_req, &mut tx).await;
 
         match result {
             Ok(_) => {

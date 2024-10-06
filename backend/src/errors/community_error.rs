@@ -10,6 +10,7 @@ pub enum CommunityError {
     PoolError(bb8::RunError<tokio_postgres::Error>),
     HashingError(argon2::password_hash::Error),
     TokenCreationError(jsonwebtoken::errors::Error),
+    NotFound(String),
 }
 
 impl fmt::Display for CommunityError {
@@ -19,6 +20,7 @@ impl fmt::Display for CommunityError {
             CommunityError::PoolError(err) => write!(f, "Pool error: {}", err),
             CommunityError::HashingError(err) => write!(f, "Password hashing error: {}", err),
             CommunityError::TokenCreationError(err) => write!(f, "JWT error: {}", err),
+            CommunityError::NotFound(resource) => write!(f, "Resource not found: {}", resource),
         }
     }
 }

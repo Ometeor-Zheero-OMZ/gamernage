@@ -13,10 +13,15 @@ mod tests {
         #[async_trait]
         impl CommunityService for CommunityService{
             async fn create_community(&self, user: Claims, todo_req: &Community) -> Result<(), CommunityError>;
+            async fn fetch_community_details(
+                &self,
+                user: Claims,
+                community_id: i32,
+            ) -> Result<CommunityDetails, CommunityError>;
         }
     }
 
-    // TODO追加
+    // コミュニティ作成
     #[actix_rt::test]
     async fn test_create_community() -> Result<(), CommunityError> {
         let mut mock_service = MockCommunityService::new();
@@ -27,6 +32,7 @@ mod tests {
             username: "test user".to_string(),
             profile_image: "865f8wef87e".to_string(),
             bio: "biography...".to_string(),
+            created_by: 1,
         };
 
         let request_create_community_clone = request_create_community.clone();

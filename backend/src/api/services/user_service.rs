@@ -2,6 +2,9 @@
 
 use crate::api::jwt::jwt::Claims;
 use crate::{app_log, error_log};
+use bb8_postgres::bb8::PooledConnection;
+use bb8_postgres::PostgresConnectionManager;
+use postgres::NoTls;
 use tokio_postgres::Error;
 
 /// Retrieves the user ID from the database using the user's email address.
@@ -23,10 +26,10 @@ use tokio_postgres::Error;
 /// ```
 pub async fn get_user_id(
     user: &Claims,
-    transaction: &tokio_postgres::Transaction<'_>,
+    conn: &mut PooledConnection<'_, PostgresConnectionManager<NoTls>>,
 ) -> Result<i32, Error> {
     // ユーザーの存在チェック
-    let row_result = transaction
+    let row_result = conn
         .query_one(
             r#"
             SELECT

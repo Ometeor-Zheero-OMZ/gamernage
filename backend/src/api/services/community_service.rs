@@ -1,6 +1,6 @@
 use crate::api::jwt::jwt::Claims;
 use crate::constants::custom_type::CommunityRepositoryArc;
-use crate::db::models::community::Community;
+use crate::db::models::community::{Community, CommunityDetails};
 use crate::errors::community_error::CommunityError;
 use crate::{app_log, error_log};
 use async_trait::async_trait;
@@ -18,6 +18,12 @@ pub trait CommunityService: Send + Sync {
         user: Claims,
         community_req: &Community,
     ) -> Result<(), CommunityError>;
+
+    async fn fetch_community_details(
+        &self,
+        user: Claims,
+        community_id: i32,
+    ) -> Result<CommunityDetails, CommunityError>;
 }
 
 pub struct CommunityServiceImpl {
@@ -48,10 +54,12 @@ impl CommunityService for CommunityServiceImpl {
 
         let pool = self.pool.clone();
         let mut conn = pool.get().await.map_err(CommunityError::from)?;
+        
+        let user_id = get_user_id(&user, &mut conn).await?;
+
         let mut tx = conn.transaction().await.map_err(CommunityError::from)?;
 
         let result = async {
-            let user_id = get_user_id(&user, &mut tx).await?;
             community_repository
                 .create_community(user_id, community_req, &mut tx)
                 .await
@@ -74,4 +82,38 @@ impl CommunityService for CommunityServiceImpl {
             }
         }
     }
+
+    async fn fetch_community_details(
+        &self,
+        user: Claims,
+        community_id: i32,
+    ) -> Result<CommunityDetails, CommunityError> {
+        let community_repository = self.community_repository.clone();
+
+        let pool = self.pool.clone();
+        let mut conn = pool.get().await.map_err(CommunityError::from)?;
+
+        let result = async {
+            let _user_id = get_user_id(&user, &mut conn).await?;
+            let community = community_repository.get_community_by_id(community_id, &mut conn).await?;
+            let members = community_repository.get_community_members(community_id, &mut conn).await?;
+
+            Ok(CommunityDetails { community, members })
+        }
+        .await;
+
+        match result {
+            Ok(value) => {
+                Ok(value)
+            },
+            Err(community_error) => {
+                error_log!(
+                    "[community_service] - [create_community] - [message: community_error = {}]",
+                    community_error
+                );
+
+                Err(community_error)
+            }
+        }
+    } 
 }
