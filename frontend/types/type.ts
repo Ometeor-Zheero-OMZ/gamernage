@@ -92,4 +92,5 @@ export type AuthContextType = {
   login: (name: string, email: string, password: string) => Promise<boolean>;
   signOut: () => Promise<boolean>;
   guestLogin: () => Promise<boolean>;
+  checkUser: () => void;
 };

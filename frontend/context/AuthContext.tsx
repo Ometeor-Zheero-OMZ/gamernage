@@ -29,6 +29,15 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  const checkUser = () => {
+    const storedToken = localStorage.getItem("login_token");
+    if (storedToken) {
+      setUser({ token: storedToken } as User);
+    } else {
+      setUser(null);
+    }
+  };
+
   const signup = async (name: string, email: string, password: string) => {
     const signupRequest: SignupRequest = { name, email, password };
 
@@ -258,6 +267,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   useEffect(() => {
     const loadUser = async () => {
       try {
+        checkUser();
         const user = await getCurrentUser();
         if (user) {
           setUser(user);
@@ -299,6 +309,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
         login,
         signOut,
         guestLogin,
+        checkUser,
       }}
     >
       {children}

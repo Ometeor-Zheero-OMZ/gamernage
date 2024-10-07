@@ -1,11 +1,8 @@
-// {
-//   "extends": ["next", "next/core-web-vitals"]
-// }
-
 {
-  "extends": "next/core-web-vitals",
+  "extends": ["next/core-web-vitals", "next/typescript"],
   "rules": {
-    "no-console": ["warn"],
-    "no-unused-vars": ["warn"]
+    "@typescript-eslint/no-unused-vars": "warn", // エラーを警告に変更
+    "prefer-const": "off", // const推奨ルールを無効化
+    "@typescript-eslint/no-explicit-any": "warn"
   }
 }
