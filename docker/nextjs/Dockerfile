@@ -7,8 +7,11 @@ WORKDIR /frontend
 # パッケージファイルをコピー
 COPY ./frontend/package*.json ./
 
-# 依存関係をインストール
-RUN npm install
+# # 依存関係をインストール
+# RUN npm install
+
+# キャッシュクリアと依存関係のインストール
+RUN npm cache clean --force && npm install || npm install
 
 # 残りのアプリケーションファイルをコピー
 COPY ./frontend .
