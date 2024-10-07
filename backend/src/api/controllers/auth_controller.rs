@@ -86,7 +86,6 @@ pub async fn signup(
                         "[auth_controller] - [signup] - [message: db_error = {}]",
                         db_error
                     );
-                    // return HttpResponse::new(StatusCode::CONFLICT);
                     return HttpResponse::Conflict().finish();
                 }
             }

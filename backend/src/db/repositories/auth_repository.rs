@@ -63,7 +63,7 @@ use crate::db::models::{
     user::User,
 };
 use crate::errors::auth_error::AuthError;
-use crate::{app_log, error_log};
+use crate::{app_log, error_log, success_log};
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
@@ -118,24 +118,24 @@ impl AuthRepository for AuthRepositoryImpl {
         let rows = conn
             .query(
                 r#"
-                SELECT 
-                    users.id,
-                    user_profiles.name,
-                    user_profiles.email,
-                    user_auth.password
-                FROM
-                    users
-                INNER JOIN
-                    user_auth
-                ON
-                    user_auth.user_id = users.id
-                INNER JOIN
-                    user_profiles
-                ON
-                    user_profiles.user_id = user_auth.user_id
-                WHERE
-                    email = $1;
-            "#,
+                    SELECT 
+                        users.id,
+                        user_profiles.name,
+                        user_profiles.email,
+                        user_auth.password
+                    FROM
+                        users
+                    INNER JOIN
+                        user_auth
+                    ON
+                        user_auth.user_id = users.id
+                    INNER JOIN
+                        user_profiles
+                    ON
+                        user_profiles.user_id = user_auth.user_id
+                    WHERE
+                        email = $1;
+                "#,
                 &[&req.email],
             )
             .await?;
@@ -160,6 +160,8 @@ impl AuthRepository for AuthRepositoryImpl {
                     email: req.email.clone(),
                     token,
                 };
+
+                success_log!("[auth_repository] - [guest_login] - [message: token created]");
                 Ok(Some(user_data))
             }
             Err(error) => {
@@ -266,25 +268,25 @@ impl AuthRepository for AuthRepositoryImpl {
         let rows = conn
             .query(
                 r#"
-                SELECT 
-                    users.id,
-                    user_profiles.name,
-                    user_profiles.email,
-                    user_auth.password
-                FROM
-                    users
-                INNER JOIN
-                    user_auth
-                ON
-                    user_auth.user_id = users.id
-                INNER JOIN
-                    user_profiles
-                ON
-                    user_profiles.user_id = user_auth.user_id
-                WHERE
-                    user_profiles.name = $1
-                    AND user_profiles.email = $2;
-            "#,
+                    SELECT 
+                        users.id,
+                        user_profiles.name,
+                        user_profiles.email,
+                        user_auth.password
+                    FROM
+                        users
+                    INNER JOIN
+                        user_auth
+                    ON
+                        user_auth.user_id = users.id
+                    INNER JOIN
+                        user_profiles
+                    ON
+                        user_profiles.user_id = user_auth.user_id
+                    WHERE
+                        user_profiles.name = $1
+                        AND user_profiles.email = $2;
+                "#,
                 &[&req.name, &req.email],
             )
             .await?;

@@ -71,8 +71,7 @@ impl AuthService for AuthServiceImpl {
     /// * `Ok(None)` - If the guest login is successful but no user is found.
     /// * `Err(AuthError)` - If an error occurs during the operation.
     async fn guest_login(&self, req: &LoginRequest) -> Result<Option<User>, AuthError> {
-        let user_opt = self.auth_repository.guest_login(req).await?;
-        match user_opt {
+        match self.auth_repository.guest_login(req).await? {
             Some(user) => Ok(Some(user)),
             None => Ok(None),
         }
