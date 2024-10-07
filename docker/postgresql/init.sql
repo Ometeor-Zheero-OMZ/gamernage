@@ -16,7 +16,7 @@ CREATE TABLE user_profiles (
   name TEXT NOT NULL,
   email TEXT UNIQUE,
   email_verified TIMESTAMP WITH TIME ZONE,
-  username TEXT UNIQUE NOT NULL,
+  username TEXT UNIQUE,
   image TEXT,
   header_image TEXT,
   profile_image BYTEA NULL,
@@ -78,6 +78,19 @@ CREATE TABLE session (
   CONSTRAINT fk_user_session FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- コミュニティ
+DROP TABLE IF EXISTS communities;
+CREATE TABLE communities (
+  id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  username VARCHAR UNIQUE NOT NULL,
+  name VARCHAR NOT NULL,
+  image TEXT,
+  bio TEXT,
+  created_by INT REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- スレッド
 DROP TABLE IF EXISTS threads;
 CREATE TABLE threads (
@@ -100,19 +113,6 @@ CREATE TABLE thread_children (
   PRIMARY KEY (thread_id, child_id),
   FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE CASCADE,
   FOREIGN KEY (child_id) REFERENCES threads(id) ON DELETE CASCADE
-);
-
--- コミュニティ
-DROP TABLE IF EXISTS communities;
-CREATE TABLE communities (
-  id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  username VARCHAR UNIQUE NOT NULL,
-  name VARCHAR NOT NULL,
-  image TEXT,
-  bio TEXT,
-  created_by INT REFERENCES users(id) ON DELETE SET NULL,
-  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- コミュニティメンバー
@@ -247,14 +247,14 @@ INSERT INTO users (created_at, updated_at)
 VALUES (CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- ユーザープロファイルの追加
-INSERT INTO user_profiles (user_id, name, email, created_at, updated_at)
-VALUES (1, 'test_user1', 'test@gmail.com', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO user_profiles (user_id, name, email, onboarded, created_at, updated_at)
+VALUES (1, 'test_user1', 'test@gmail.com', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- 認証情報の追加
 INSERT INTO user_auth (user_id, password, created_at, updated_at)
 VALUES (1, '$2b$04$BuM27R11fuD0hubq.Nykd.aw.WDI8F2/lYCPabzfLdGG1GHvYqR/i', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
-
+-- todosの追加
 INSERT INTO todos ("user_id", "title", "description", "is_completed", "status", "priority", "difficulty", "created_at", "updated_at") VALUES
 	 ((SELECT user_id FROM user_profiles WHERE name = 'test_user1'), 'コーディングテスト', 'Leetcodeでアルゴリズムの勉強', false, 1, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 	 ((SELECT user_id FROM user_profiles WHERE name = 'test_user1'), 'ランニング', '30分くらい公園でランニング', false, 1, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
