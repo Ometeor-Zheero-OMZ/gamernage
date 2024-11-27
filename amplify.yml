@@ -3,22 +3,18 @@ frontend:
   phases:
     preBuild:
       commands:
-        - nvm install 20
-        - nvm use 20
-        - cd frontend
+        - ls -l
         - npm install
     build:
       commands:
-        - cd frontend
         - npm run build
     postBuild:
       commands:
-        - cd frontend
         - npm run export
   artifacts:
-    baseDirectory: frontend/out
+    baseDirectory: out
     files:
       - "**/*"
   cache:
     paths:
-      - frontend/node_modules/**/*
+      - node_modules/**/*
