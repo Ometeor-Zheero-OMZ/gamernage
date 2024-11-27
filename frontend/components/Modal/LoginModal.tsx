@@ -50,7 +50,7 @@ const LoginModal: FC<LoginModalProps> = ({ isVisible, onClose }) => {
 
     if (isSuccess) {
       onClose();
-      router.push("/gamission");
+      router.push("/homepage");
 
       toast({
         title: "Authentication Success",

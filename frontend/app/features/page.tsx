@@ -1,4 +1,4 @@
-const Features = () => {
+export default function Page() {
   return (
     <>
       <div className="features-container">
@@ -71,6 +71,4 @@ const Features = () => {
       </div>
     </>
   );
-};
-
-export default Features;
+}
