@@ -76,7 +76,7 @@ export default function Home() {
             </span>
           </h1>
           <p className="font-teko text-6xl font-bold text-light mb-20 animate-moveToRight tracking-wider sm:text-5xl md:text-5xl lg:text-6xl">
-            Share Your Game Training Menus
+            Share Your Game
           </p>
           <OutlineButton
             title="Guest Login"

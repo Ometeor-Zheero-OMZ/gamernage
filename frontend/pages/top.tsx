@@ -51,7 +51,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Ataria - Game community & Game Training Menu</title>
+        <title>Ataria - Join The Game Community & Release Your Game</title>
       </Head>
 
       <Navbar />
@@ -71,7 +71,7 @@ export default function Home() {
             </span>
           </h1>
           <p className="font-teko text-6xl font-bold text-light mb-20 animate-moveToRight tracking-wider sm:text-5xl md:text-5xl lg:text-6xl">
-            Share Your Game Training Menus
+            Share Your Game
           </p>
           <OutlineButton
             title="Guest Login"

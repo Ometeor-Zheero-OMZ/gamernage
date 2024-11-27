@@ -34,7 +34,7 @@ const Footer = () => {
                   href="#"
                   className="capitalize no-underline text-[#6c8df8] text-[20px] pb-[10px] hover:text-[#9274ff] duration-300"
                 >
-                  GManage
+                  GStore
                 </Link>
                 <Link
                   href="#"
