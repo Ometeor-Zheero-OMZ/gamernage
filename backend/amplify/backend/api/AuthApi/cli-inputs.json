@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "paths": {
+    "/auth": {
+      "name": "/auth",
+      "lambdaFunction": "AuthFunc",
+      "permissions": {
+        "setting": "open"
+      }
+    },
+    "/todo": {
+      "name": "/todo",
+      "lambdaFunction": "TodoApi",
+      "permissions": {
+        "setting": "open"
+      }
+    }
+  }
+}
