@@ -25,5 +25,5 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
-          scp -i path_to_key.pem target/release/backend.exe ubuntu@43.207.181.31:/home/ubuntu/
-          ssh -i path_to_key.pem ubuntu@43.207.181.31 "sudo systemctl restart actix_web"
+          scp -i ../../security/rust-key.pem target/release/backend.exe ubuntu@43.207.181.31:/home/ubuntu/
+          ssh -i ../../security/rust-key.pem ubuntu@43.207.181.31 "sudo systemctl restart actix_web"
