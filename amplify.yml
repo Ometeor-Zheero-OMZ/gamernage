@@ -14,7 +14,7 @@ frontend:
         - cd frontend
         - npm run export
   artifacts:
-    baseDirectory: /out
+    baseDirectory: frontend/out
     files:
       - "**/*"
   cache:
