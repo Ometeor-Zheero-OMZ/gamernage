@@ -1,6 +1,8 @@
+"use client";
+
 import { FaLocationArrow } from "react-icons/fa6";
 import { useState } from "react";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
@@ -12,7 +14,7 @@ import SimpleColorfulButton from "@/components/ui/SimpleColorfulButton";
 import { Toaster } from "@/components/ui/Toaster";
 import Head from "next/head";
 
-export default function Home() {
+export default function Page() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isSignupVisible, setIsSignupVisible] = useState(false);
   const router = useRouter();
@@ -25,7 +27,7 @@ export default function Home() {
     setIsLoggingIn(false);
 
     if (isSuccess) {
-      router.push("/gamission");
+      router.push("/homepage");
     } else {
       toast({
         title: "Authentication Failure",

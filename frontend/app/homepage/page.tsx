@@ -13,10 +13,10 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 
-import Column from "../components/Column/Column";
-import Input from "../components/Input/Input";
-import { TaskParam } from "../types/type";
-import { useRouter } from "next/router";
+import Column from "@/components/Column/Column";
+import Input from "@/components/Input/Input";
+import { TaskParam } from "@/types/type";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { ERROR_MESSAGES } from "@/constants/message";
 import Navbar from "@/components/Navbar";
@@ -28,7 +28,7 @@ import {
   updateTask,
 } from "@/api/todos";
 
-const Gamission = () => {
+export default function Page() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [tasks, setTasks] = useState<TaskParam[]>([]);
@@ -179,6 +179,4 @@ const Gamission = () => {
       </div>
     </>
   );
-};
-
-export default Gamission;
+}

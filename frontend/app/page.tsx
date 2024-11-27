@@ -1,6 +1,8 @@
+"use client";
+
 import { FaLocationArrow } from "react-icons/fa6";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
@@ -24,7 +26,7 @@ export default function Home() {
     setIsLoggingIn(false);
 
     if (isSuccess) {
-      router.push("/gamission");
+      router.push("/homepage");
     } else {
       toast({
         title: "Authentication Failure",
@@ -51,7 +53,7 @@ export default function Home() {
     if (user === null) return;
 
     if (user) {
-      router.push("/gamission");
+      router.push("/homepage");
     } else {
       router.push("/");
     }
