@@ -7,11 +7,9 @@ frontend:
         - npm install
     build:
       commands:
-        - cd frontend
         - npm run build
     postBuild:
       commands:
-        - cd frontend
         - npm run export
   artifacts:
     baseDirectory: frontend/out
