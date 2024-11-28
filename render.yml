@@ -1,0 +1,10 @@
+services:
+  - name: backend
+    type: web
+    env: rust
+    buildCommand: |
+      cd backend
+      cargo build --release
+    startCommand: |
+      cd backend
+      ./target/release/backend.exe
