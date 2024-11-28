@@ -41,6 +41,9 @@ lazy_static = "1.4"
 async-trait = "0.1.82"
 validator = { version = "0.18.1", features = ["derive"]}
 regex = "1.10.6"
+# AWS
+lambda_http = "0.13.0"
+lambda_runtime = "0.13.0"
 
 [dev-dependencies]
 mockall = "0.13.0"
