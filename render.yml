@@ -7,4 +7,4 @@ services:
       cargo build --release
     startCommand: |
       cd backend
-      ./target/release/your_backend_executable
+      ./target/release/backend.exe
