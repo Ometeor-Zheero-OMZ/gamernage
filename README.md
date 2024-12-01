@@ -1,4 +1,4 @@
-# ⚠️AWS環境での運用のためリポジトリを変更しました。⚠️
+# ⚠️AWS環境での運用のためリポジトリを変更しました
 ## ↓↓↓対象リポジトリ↓↓↓
 
 https://github.com/Ometeor-Zheero-OMZ/Ataria
