@@ -1,7 +1,7 @@
-⚠️⚠️⚠️AWS環境での運用のためリポジトリを変更しました。⚠️⚠️⚠️
-対象リポジトリ：
+# ⚠️⚠️⚠️AWS環境での運用のためリポジトリを変更しました。⚠️⚠️⚠️
+## ↓↓↓対象リポジトリ↓↓↓
 
-`https://github.com/Ometeor-Zheero-OMZ/Ataria`
+https://github.com/Ometeor-Zheero-OMZ/Ataria
 
 理由：
 バックエンドをRustでWebフレームワークのActix Webを使用して開発を進めていましたが、Actix Webのソースコードのまま AWS Lambdaでの処理方法が異なるため、
