@@ -4,8 +4,8 @@
 https://github.com/Ometeor-Zheero-OMZ/Ataria
 
 理由：
-バックエンドをRustでWebフレームワークのActix Webを使用して開発を進めていましたが、現段階でActix Web と AWS Lambdaとの連携は難しく、別のウェブフレームワークである Axum では AWS Lambdaとの連携は可能であったため、
-大幅にソースコードの改修を行いました。また、今回でソース改修の範囲が広かったことを反省して、クリーンアーキテクチャ (DDD)で実装しなおしました。
+現状のActix WebとAWS Lambdaの相性は良いとは言えず、中の Actix モデルが持続的なサーバーで高パフォーマンスを発揮するため、大幅な見直しをしました。
+そこで、Axum であれば AWS Lambda との連携が容易のため、リポジトリを変更して実装しなおしました。
 
 変更点：
 - Axum の採用
