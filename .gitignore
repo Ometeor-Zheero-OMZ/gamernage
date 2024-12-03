@@ -2,6 +2,7 @@
 .vscode/*
 backend/target
 backend/.env
-docker/postgresql/.env.db
+docker/postgresql/.env
 .env
 .dockerignore
+rust-key.pem
