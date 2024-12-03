@@ -24,6 +24,23 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}  # EC2ホストIP
+          EC2_USER: ${{ secrets.EC2_USER }}  # EC2のユーザー名（通常は ubuntu）
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}  # 秘密鍵（GitHub Secretsに保存）
         run: |
-          scp -i ../../security/rust-key.pem target/release/backend.exe ubuntu@43.207.181.31:/home/ubuntu/
-          ssh -i ../../security/rust-key.pem ubuntu@43.207.181.31 "sudo systemctl restart actix_web"
+          # 秘密鍵をファイルに書き込む
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/ec2-key.pem
+          chmod 600 ~/ec2-key.pem
+
+          # SCPでアプリケーションを転送
+          scp -i ~/ec2-key.pem target/release/backend.exe $EC2_USER@$EC2_HOST:/home/ubuntu/gamernage/
+
+          # EC2にSSHで接続して、docker-composeを使ってビルドと起動
+          ssh -i ~/ec2-key.pem $EC2_USER@$EC2_HOST << 'EOF'
+            cd /home/ubuntu/gamernage
+            cd frontend
+            npm run build
+            cd ../
+            sudo docker-compose build --no-cache
+            sudo docker-compose up -d
+          EOF
