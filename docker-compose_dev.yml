@@ -20,7 +20,7 @@ services:
       - app_net
     # Password
     env_file:
-      - ./docker/postgresql/.env.db
+      - ./docker/postgresql/.env
     restart: on-failure:5
 networks:
   app_net:
