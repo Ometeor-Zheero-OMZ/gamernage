@@ -1,15 +1,18 @@
-use std::sync::Arc;
-
 use async_trait::async_trait;
-use bb8_postgres::{bb8::Pool, PostgresConnectionManager};
-use postgres::NoTls;
-use validator::Validate;
-use lambda_http::tracing::error;
-
+use argon2::{
+    password_hash::{
+        rand_core::OsRng,
+        PasswordHash,
+        PasswordHasher,
+        PasswordVerifier,
+        SaltString
+    },
+    Argon2
+};
 use crate::{
-    application::errors::auth_error::AuthError,
-    application::types::custom_types::AuthRepositoryArc,
-    domain::entities::{auth::{LoginRequest, SignupRequest}, user::User}
+    application::{errors::auth_error::AuthError, jwt::jwt, types::di_type::AuthRepositoryArc},
+    domain::entities::{auth::{LoginRequest, SignupRequest}, user::User},
+    {app_log, error_log}
 };
 
 #[async_trait]
@@ -21,12 +24,11 @@ pub trait AuthService: Send + Sync {
 
 pub struct AuthServiceImpl {
     auth_repository: AuthRepositoryArc,
-    pool: Arc<Pool<PostgresConnectionManager<NoTls>>>
 }
 
 impl AuthServiceImpl {
-    pub fn new(auth_repository: AuthRepositoryArc, pool: Pool<PostgresConnectionManager<NoTls>>) -> Self {
-        AuthServiceImpl { auth_repository, pool: Arc::new(pool) }
+    pub fn new(auth_repository: AuthRepositoryArc) -> Self {
+        AuthServiceImpl { auth_repository }
     }
 }
 
@@ -41,31 +43,39 @@ impl AuthService for AuthServiceImpl {
     }
 
     async fn signup(&self, req: &SignupRequest) -> Result<(), AuthError> {
-        let pool = self.pool.clone();
-        let mut conn = pool.get().await.map_err(AuthError::from)?;
-        let mut tx = conn.transaction().await.map_err(AuthError::from)?;
+        // パスワードを暗号化
+        let argon2 = Argon2::default();
+        let salt = SaltString::generate(&mut OsRng);
+        let hashed_password = argon2.hash_password(&req.password.as_bytes(), &salt)?.to_string();
+        
+        self.auth_repository.signup(&req.name, &req.email, &hashed_password).await?;
 
-        let result = self.auth_repository.signup(req, &mut tx).await;
-
-        match result {
-            Ok(value) => {
-                tx.commit().await.map_err(AuthError::from)?;
-                Ok(value)
-            }
-            Err(auth_error) => {
-                tx.rollback().await.map_err(AuthError::from)?;
-                error!("[auth_service] - [signup] - [message: auth_error = {}]", auth_error);
-
-                Err(auth_error)
-            }
-        }
+        Ok(())
     }
 
     async fn login(&self, req: &LoginRequest) -> Result<Option<User>, AuthError> {
-        if let Err(validation_errors) = req.validate() {
-            return Err(AuthError::ValidationError(validation_errors));
+        if let Some((id, name, email, hashed_password)) = self.auth_repository.get_user_by_email(&req.email).await? {
+            // ハッシュ化されたパスワードをパース
+            let argon2 = Argon2::default();
+            let parsed_hash = PasswordHash::new(&hashed_password)?;
+
+            // 検証
+            if let Err(err) = argon2.verify_password(req.password.as_bytes(), &parsed_hash) {
+                error_log!("[auth_service] - [login] - [message: Authentication Failed] - Error: {:?}", err);
+                return Ok(None);
+            }
+    
+            let token = jwt::create_token(&req.email, &id)?;
+            let user_data = User {
+                id,
+                name,
+                email,
+                token,
+            };
+    
+            return Ok(Some(user_data));
         }
 
-        self.auth_repository.login(req).await
+        Ok(None)
     }
 }

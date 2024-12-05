@@ -1,46 +1,44 @@
 use async_trait::async_trait;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use std::time::{SystemTime, UNIX_EPOCH};
-use tokio_postgres::{Transaction, NoTls};
+use tokio_postgres::NoTls;
 use bb8_postgres::{PostgresConnectionManager, bb8::Pool};
 use crate::domain::entities::todo::*;
 use crate::application::errors::todo_error::TodoError;
+use crate::{app_log, info_log};
 
 #[async_trait]
 pub trait TodoRepository: Send + Sync {
     async fn get_todos(&self,
         user_id: i32,
-        tx: &mut Transaction<'_>
     ) -> Result<Vec<TodoItem>, TodoError>;
 
     async fn create_todo(
         &self,
         user_id: i32,
         todo_req: &RequestCreateTodoItem,
-        tx: &mut Transaction<'_>
     ) -> Result<ResponseCreateTodoItem, TodoError>;
 
     async fn update_todo(
         &self,
         todo_req: &RequestUpdateTodoItem,
-        tx: &mut Transaction<'_>
+
     ) -> Result<(), TodoError>;
 
     async fn delete_todo(
         &self,
         todo_req: &RequestDeleteTodoItem,
-        tx: &mut Transaction<'_>
+
     ) -> Result<(), TodoError>;
     
     async fn complete_todo(
         &self,
         todo_req: &RequestCompleteTodoItem,
-        tx: &mut Transaction<'_>
+
     ) -> Result<(), TodoError>;
 }
 
 pub struct TodoRepositoryImpl {
-    #[allow(dead_code)]
     pool: Pool<PostgresConnectionManager<NoTls>>,
 }
 
@@ -55,9 +53,10 @@ impl TodoRepository for TodoRepositoryImpl {
     async fn get_todos(
         &self,
         user_id: i32,
-        tx: &mut Transaction<'_>
     ) -> Result<Vec<TodoItem>, TodoError> {
-        let rows = tx.query(
+        let conn = self.pool.get().await?;
+
+        let rows = conn.query(
             r#"
                 SELECT
                     *
@@ -69,6 +68,8 @@ impl TodoRepository for TodoRepositoryImpl {
             &[&user_id],
         ).await?;
 
+        info_log!("rows = {:?}", rows);
+
         let todos: Vec<TodoItem> = rows.into_iter().map(|row| {
             // データベースから抽出したタイムスタンプを YYYY-MM-dd HH:mm:ss フォーマットに変換
             let convert_timestamp = |time: SystemTime| -> NaiveDateTime {
@@ -78,7 +79,7 @@ impl TodoRepository for TodoRepositoryImpl {
                     .naive_utc()
             };
 
-            TodoItem {
+            let todo = TodoItem {
                 id: row.get("id"),
                 user_id: row.get("user_id"),
                 game_id: row.get("game_id"),
@@ -92,7 +93,10 @@ impl TodoRepository for TodoRepositoryImpl {
                 created_at: convert_timestamp(row.get("created_at")),
                 updated_at: convert_timestamp(row.get("updated_at")),
                 deleted_at: row.get::<_, Option<SystemTime>>("deleted_at").map(convert_timestamp),
-            }
+            };
+
+            info_log!("todo = {:?}", todo);
+            todo
         }).collect();
 
         Ok(todos)
@@ -102,9 +106,10 @@ impl TodoRepository for TodoRepositoryImpl {
         &self,
         user_id: i32,
         todo_req: &RequestCreateTodoItem,
-        tx: &mut Transaction<'_>
     ) -> Result<ResponseCreateTodoItem, TodoError> {
-        let row = tx.query_one(
+        let conn = self.pool.get().await?;
+
+        let row_result = conn.query_one(
             r#"
                 INSERT INTO todos (
                     user_id,
@@ -127,18 +132,19 @@ impl TodoRepository for TodoRepositoryImpl {
         ).await?;
 
         Ok(ResponseCreateTodoItem {
-            title: row.get("title"),
-            description: row.get("description"),
-            is_completed: row.get("is_completed")
+            title: row_result.get("title"),
+            description: row_result.get("description"),
+            is_completed: row_result.get("is_completed")
         })
     }
 
     async fn delete_todo(
         &self,
         todo_req: &RequestDeleteTodoItem,
-        tx: &mut Transaction<'_>
     ) -> Result<(), TodoError> {
-        tx.execute(
+        let conn = self.pool.get().await?;
+
+        conn.execute(
             r#"
                 UPDATE
                     todos
@@ -156,9 +162,10 @@ impl TodoRepository for TodoRepositoryImpl {
     async fn update_todo(
         &self,
         todo_req: &RequestUpdateTodoItem,
-        tx: &mut Transaction<'_>
     ) -> Result<(), TodoError> {
-        tx.execute(
+        let conn = self.pool.get().await?;
+
+        conn.execute(
             r#"
                 UPDATE
                     todos
@@ -184,9 +191,10 @@ impl TodoRepository for TodoRepositoryImpl {
     async fn complete_todo(
         &self,
         todo_req: &RequestCompleteTodoItem,
-        tx: &mut Transaction<'_>
     ) -> Result<(), TodoError> {
-        tx.execute(
+        let conn = self.pool.get().await?;
+
+        conn.execute(
             r#"
                 UPDATE
                     todos

@@ -1,16 +1,12 @@
 use actix_cors::Cors;
 use actix_web::{web::Data, App, HttpServer};
 use dotenvy::dotenv;
+use std::env;
 
-use api::middlewares::jwt_middleware;
-use libraries::app_state::AppState;
+use application::middlewares::jwt_middleware;
+use application::states::app_state::AppState;
+use infrastructure::db::connection::get_db_pool;
 use presentation::routes::routes::api_scopes;
-
-mod api;
-mod constants;
-mod db;
-mod errors;
-mod libraries;
 
 mod application;
 mod domain;
@@ -25,7 +21,11 @@ async fn main() -> std::io::Result<()> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
     dotenv().ok();
 
-    let pool = db::pool::get_db_pool().await;
+    let host: &str = &env::var("HOST_NAME").expect("環境変数 `HOST_NAME` は設定する必要があります。");
+    let backend_port: &str = &env::var("BACKEND_PORT").expect("環境変数 `BACKEND_PORT` は設定する必要があります。");
+    let uri = format!("{}:{}", host, backend_port);
+
+    let pool = get_db_pool().await;
     let app_state = AppState::init(&pool);
 
     HttpServer::new(move || {
@@ -42,7 +42,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(Data::new(app_state.clone()))
             .service(api_scopes())
     })
-    .bind("0.0.0.0:8080")?
+    .bind(uri)?
     .workers(20)
     .run()
     .await

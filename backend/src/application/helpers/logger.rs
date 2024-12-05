@@ -7,7 +7,7 @@ use lazy_static::lazy_static;
 use crate::PROJECT_PATH;
 
 lazy_static! {
-    pub static ref LOG_PATH: String = format!("{}/log/axum.log", PROJECT_PATH);
+    pub static ref LOG_PATH: String = format!("{}/log/actix.log", PROJECT_PATH);
 }
 
 #[allow(dead_code)]

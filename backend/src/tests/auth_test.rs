@@ -1,24 +1,12 @@
-/// This is a bunch of authentication tests using mockall crate
-/// https://crates.io/crates/mockall
-/// 
-/// 
-/// Other refs
-/// 
-/// https://github.com/nemesiscodex/actix-todo/blob/master/src/integration_tests.rs
-/// 
-/// https://github.com/olxgroup-oss/dali
-
-
-#[allow(dead_code)]
 #[cfg(test)]
 mod tests {
     use mockall::mock;
     use async_trait::async_trait;
     use validator::{ValidationError, ValidationErrors, ValidationErrorsKind};
-    use crate::db::models::auth::{LoginRequest, SignupRequest};
-    use crate::db::models::user::User;
-    use crate::errors::auth_error::AuthError;
-    use crate::api::services::auth_service::AuthService;
+    use crate::domain::entities::auth::{LoginRequest, SignupRequest};
+    use crate::domain::entities::user::User;
+    use crate::application::errors::auth_error::AuthError;
+    use crate::domain::services::auth_service::AuthService;
 
     mock! {
         pub AuthService {}

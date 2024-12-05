@@ -1,14 +1,12 @@
-use actix_web::{
-    web, HttpRequest, HttpResponse,
-    Result, Scope
-};
-use crate::api::controllers::{auth_controller, todo_controller};
+use actix_web::web::{delete, get, post, scope};
+use actix_web::Scope;
+use crate::presentation::handlers::todo_handlers::{get_todos, create_todo, update_todo, delete_todo, complete_todo};
 
 pub fn todo_scope() -> Scope {
-    web::scope("/api")
-        .route("/todos", web::get().to(todo_controller::get_todos))
-        .route("/todo", web::post().to(todo_controller::create_todo))
-        .route("/todo", web::post().to(todo_controller::update_todo))
-        .route("/todo", web::delete().to(todo_controller::delete_todo))
-        .route("/todo/change-status", web::post().to(todo_controller::complete_todo))
+    scope("/todo")
+        .route("", get().to(get_todos))
+        .route("", post().to(create_todo))
+        .route("/{id}", post().to(update_todo))
+        .route("/{id}", delete().to(delete_todo))
+        .route("/change-status/{id}", post().to(complete_todo))
 }

@@ -53,7 +53,7 @@ use actix_web::{
 };
 use futures::future::{ok, Ready, LocalBoxFuture};
 
-use crate::api::jwt::jwt;
+use crate::application::jwt::jwt;
 
 /// Middleware for JWT authentication in Actix Web.
 ///

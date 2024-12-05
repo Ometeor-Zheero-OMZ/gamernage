@@ -12,11 +12,11 @@
 use actix_web::{HttpResponse, Responder, HttpRequest, web};
 use postgres::error::SqlState;
 use validator::Validate;
-use crate::api::jwt::jwt;
-use crate::db::models::auth::{LoginRequest, SignupRequest};
-use crate::errors::auth_error::AuthError;
-use crate::libraries::app_state::AppState;
-use crate::{app_log, success_log, error_log};
+use crate::application::jwt::jwt;
+use crate::application::errors::auth_error::AuthError;
+use crate::application::states::app_state::AppState;
+use crate::domain::entities::auth::{LoginRequest, SignupRequest};
+use crate::{app_log, error_log, success_log};
 
 /// ゲストログイン
 /// 

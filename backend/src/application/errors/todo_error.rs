@@ -4,12 +4,15 @@ use tokio_postgres;
 use argon2;
 use jsonwebtoken;
 
+use super::user_error::UserError;
+
 #[derive(Debug)]
 pub enum TodoError {
     DatabaseError(String),
     PoolError(bb8::RunError<tokio_postgres::Error>),
     HashingError(argon2::password_hash::Error),
     TokenCreationError(jsonwebtoken::errors::Error),
+    UserNotFound
 }
 
 impl fmt::Display for TodoError {
@@ -19,6 +22,7 @@ impl fmt::Display for TodoError {
             TodoError::PoolError(err) => write!(f, "Pool error: {}", err),
             TodoError::HashingError(err) => write!(f, "Password hashing error: {}", err),
             TodoError::TokenCreationError(err) => write!(f, "JWT error: {}", err),
+            TodoError::UserNotFound => write!(f, "user not found"),
         }
     }
 }
@@ -46,5 +50,17 @@ impl From<argon2::password_hash::Error> for TodoError {
 impl From<jsonwebtoken::errors::Error> for TodoError {
     fn from(error: jsonwebtoken::errors::Error) -> Self {
         TodoError::TokenCreationError(error)
+    }
+}
+
+impl From<UserError> for TodoError {
+    fn from(error: UserError) -> Self {
+        match error {
+            UserError::DatabaseError(err) => TodoError::DatabaseError(err),
+            UserError::PoolError(err) => TodoError::PoolError(err),
+            UserError::HashingError(err) => TodoError::HashingError(err),
+            UserError::TokenCreationError(err) => TodoError::TokenCreationError(err),
+            UserError::UserNotFound => TodoError::UserNotFound,
+        }
     }
 }

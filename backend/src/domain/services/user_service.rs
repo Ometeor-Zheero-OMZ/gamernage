@@ -1,31 +1,40 @@
-use tokio_postgres::Error;
-use lambda_http::tracing::error;
-
+use async_trait::async_trait;
+use crate::application::errors::user_error::UserError;
 use crate::application::jwt::jwt::Claims;
+use crate::application::types::di_type::UserRepositoryArc;
+use crate::{app_log, error_log};
 
-pub async fn get_user_id(user: &Claims, transaction: &tokio_postgres::Transaction<'_>) -> Result<i32, Error> {
-    // ユーザーの存在チェック
-    let row_result = transaction.query_one(
-        r#"
-            SELECT
-                user_id
-            FROM
-                user_profiles
-            WHERE
-                email = $1
-        "#,
-        &[&user.sub]
-    ).await;
+#[async_trait]
+pub trait UserService: Send + Sync {
+    async fn get_user_id(&self, user: &Claims) -> Result<i32, UserError>;
+}
 
-    match row_result {
-        Ok(user_row) => {
-            let user_id = user_row.get("user_id");
+pub struct UserServiceImpl {
+    user_repository: UserRepositoryArc,
+}
 
-            Ok(user_id)
-        },
-        Err(error) => {
-            error!("[user_service] - [get_user_id] - [message: error = {}]", error);
-            Err(error)
+impl UserServiceImpl {
+    pub fn new(user_repository: UserRepositoryArc) -> Self {
+        UserServiceImpl { user_repository }
+    }
+}
+
+#[async_trait]
+impl UserService for UserServiceImpl {
+    async fn get_user_id(&self, user: &Claims) -> Result<i32, UserError> {
+        error_log!("[service] get_user_id called");
+        let user_id_opt= self.user_repository.get_user_id(user).await?;
+
+        error_log!("[service] user_id_opt = {:?}", user_id_opt);
+        match user_id_opt {
+            Some(user_id) => {
+                error_log!("user_id = {}", user_id);
+                Ok(user_id)
+            },
+            None => {
+                error_log!("[user_service] - user not found for email: {}", user.sub);
+                Err(UserError::UserNotFound)
+            }
         }
     }
 }

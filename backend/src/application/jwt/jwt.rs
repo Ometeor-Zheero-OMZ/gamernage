@@ -47,7 +47,7 @@ use jsonwebtoken::{encode, decode, Header, Algorithm, EncodingKey, DecodingKey, 
 use serde::{Serialize, Deserialize};
 use std::time::{SystemTime, Duration};
 
-use crate::api::utils::message::SVR_MSG;
+use crate::application::helpers::message::AUTH_MSG;
 use crate::{app_log, error_log};
 
 /// Struct representing JWT claims.
@@ -181,5 +181,5 @@ pub fn verify <R: RequestHeaders>(req: &R)  -> Result<Claims, String> {
             }
         }
     }
-    return Err(SVR_MSG.get("TOKEN_NOT_FOUND_IN_REQUEST_HEADER_MSG").unwrap_or(&"").to_string());
+    return Err(AUTH_MSG.get("TOKEN_NOT_FOUND_IN_REQUEST_HEADER_MSG").unwrap_or(&"").to_string());
 }

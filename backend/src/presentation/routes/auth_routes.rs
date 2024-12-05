@@ -1,14 +1,13 @@
-use actix_web::{
-    web, HttpRequest, HttpResponse,
-    Result, Scope
-};
-use crate::api::controllers::{auth_controller, todo_controller};
+use actix_web::web::{get, post, scope};
+use actix_web::Scope;
+
+use crate::presentation::handlers::auth_handlers::{current_user, guest_login, login, signup};
 
 pub fn auth_scope() -> Scope {
-    web::scope("/api")
-        .route("/auth/guest_login", web::post().to(auth_controller::guest_login))
-        .route("/auth/signup", web::post().to(auth_controller::signup))
-        .route("/auth/login", web::post().to(auth_controller::login))
-        .route("/auth/current_user", web::get().to(auth_controller::current_user))
-        // .route("/api/auth/verify_email", web::get().to(auth::verify_email))
+    scope("/auth")
+        .route("/guest_login", post().to(guest_login))
+        .route("/signup", post().to(signup))
+        .route("/login", post().to(login))
+        .route("/current_user", get().to(current_user))
+        // .route("/verify_email", get().to(auth::verify_email))
 }

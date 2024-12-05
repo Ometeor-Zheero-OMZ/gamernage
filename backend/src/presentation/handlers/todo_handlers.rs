@@ -11,16 +11,16 @@
 //! - `complete_todo`: TODO 完了
 
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
-use reqwest::StatusCode;
-use crate::api::jwt::jwt;
-use crate::{app_log, error_log};
-use crate::libraries::app_state::AppState;
-use crate::db::models::todo::{
+
+use crate::application::jwt::jwt;
+use crate::application::states::app_state::AppState;
+use crate::domain::entities::todo::{
     RequestCreateTodoItem,
     RequestUpdateTodoItem,
     RequestDeleteTodoItem,
     RequestCompleteTodoItem
 };
+use crate::{app_log, error_log};
 
 /// TODO 取得
 /// 
