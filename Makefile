@@ -15,11 +15,17 @@ down:
 clean:
 	docker system prune -a --volumes -f && docker builder prune -a -f
 
+.PHONY: again
+again: down clean build up
+
 .PHONY: end
 end: down clean
 
-.PHONY: again
-again: down clean build up
+.PHONY: start
+start: build up
+
+.PHONY: end
+end: down clean
 
 # TEST
 .PHONY: test-up

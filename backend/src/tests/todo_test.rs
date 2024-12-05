@@ -1,14 +1,13 @@
 
-#[allow(dead_code)]
 #[cfg(test)]
 mod tests {
     use chrono::NaiveDateTime;
     use mockall::mock;
     use async_trait::async_trait;
-    use crate::api::jwt::jwt::Claims;
-    use crate::db::models::todo::*;
-    use crate::api::services::todo_service::TodoService;
-    use crate::errors::todo_error::TodoError;
+    use crate::application::jwt::jwt::Claims;
+    use crate::domain::entities::todo::*;
+    use crate::domain::services::todo_service::TodoService;
+    use crate::application::errors::todo_error::TodoError;
 
     mock! {
         pub TodoService {}

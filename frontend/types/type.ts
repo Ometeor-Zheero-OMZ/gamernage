@@ -64,7 +64,7 @@ export type SignupModalProps = {
 
 // AuthContext
 export type User = {
-  id: number;
+  id: string;
   name: string;
   token: string;
   image?: string;
