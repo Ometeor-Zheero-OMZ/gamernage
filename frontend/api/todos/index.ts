@@ -3,7 +3,7 @@ import axios from "axios";
 // Fetch tasks
 export const fetchTasks = async (token: string) => {
   try {
-    const response = await axios.get("/api/todos", {
+    const response = await axios.get("/api/todo", {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
