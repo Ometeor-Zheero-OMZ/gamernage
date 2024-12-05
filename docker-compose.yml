@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   mydb:
     build:
@@ -19,7 +17,7 @@ services:
       - app_net
     # Password
     env_file:
-      - ./docker/postgresql/.env.db
+      - ./docker/postgresql/.env
     restart: on-failure:5
 
   # Rust
