@@ -1,7 +1,6 @@
 //! 依存関係の型定義
 //! 
-//! # 例
-//! Arc<dyn ...>
+//! 非同期トレイトおよびトレイトオブジェクトの型を定義
 
 use std::sync::Arc;
 use crate::domain::{repositories::{auth_repository::AuthRepository, todo_repository::TodoRepository, user_repository::UserRepository}, services::{auth_service::AuthService, todo_service::TodoService, user_service::UserService}};
