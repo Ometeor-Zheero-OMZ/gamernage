@@ -1,3 +1,11 @@
+//! 認証のサービスロジックで使用するカスタムエラー
+//! 
+//! * `DatabaseError`      - DB処理に関するエラー
+//! * `PoolError`          - DB接続時に関するエラー
+//! * `HashingError`       - ハッシュ化に関するエラー
+//! * `TokenCreationError` - トークン作成に関するエラー
+//! * `ValidationError`    - 入力値バリデーションに関するエラー
+
 use std::fmt;
 use bb8_postgres::bb8;
 use tokio_postgres;
