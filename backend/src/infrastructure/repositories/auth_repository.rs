@@ -1,3 +1,13 @@
+//! # 認証リポジトリ
+//! 
+//! 認証処理を定義したリポジトリ
+//! 
+//! ## メソッド
+//! 
+//! `guest_login`             - ゲストログイン
+//! `signup`                  - 新規登録
+//! `get_user_by_email`       - ユーザー検索
+
 use async_trait::async_trait;
 use bcrypt::verify;
 use tokio_postgres::NoTls;
@@ -81,6 +91,23 @@ impl AuthRepository for AuthRepositoryImpl {
         }
     }
 
+    /// 新規登録
+    /// 
+    /// 新規ユーザーをサインアップします。
+    /// ユーザー情報（名前、メールアドレス、パスワード）をデータベースに挿入します。
+    /// 
+    /// # 引数
+    /// 
+    /// * `name`            - ユーザーの名前
+    /// * `email`           - ユーザーのメールアドレス
+    /// * `hashed_password` - ハッシュ化されたパスワード
+    /// 
+    /// # 戻り値
+    /// 
+    /// `Result` を返します：
+    /// 
+    /// - `Ok(())`         - ユーザー情報の登録が成功した場合。
+    /// - `Err(AuthError)` - データベース接続やクエリエラーが発生した場合、カスタムエラーを返します。
     async fn signup(
         &self,
         name: &str,
@@ -148,6 +175,21 @@ impl AuthRepository for AuthRepositoryImpl {
         Ok(())
     }
 
+    /// メールアドレスでユーザーを検索
+    /// 
+    /// メールアドレスを使ってユーザーを検索し、結果を返します。
+    /// 
+    /// # 引数
+    /// 
+    /// * `email` - ユーザーのメールアドレス
+    /// 
+    /// # 戻り値
+    /// 
+    /// `Result` を返します：
+    /// 
+    /// - `Ok(Some((id, name, email, password)))` - ユーザーが見つかった場合、ユーザー情報を返します。
+    /// - `Ok(None)`                              - ユーザーが見つからなかった場合。
+    /// - `Err(AuthError)`                        - データベース接続やクエリエラーが発生した場合、カスタムエラーを返します。
     async fn get_user_by_email(&self, email: &str) -> Result<Option<(i32, String, String, String)>, AuthError> {
         let conn = self.pool.get().await?;
         let rows = conn.query(

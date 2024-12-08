@@ -1,12 +1,25 @@
+//! # タスクリポジトリ
+//! 
+//! タスク処理を定義したリポジトリ
+//! 
+//! ## メソッド
+//! 
+/// `get_todos`     - ユーザーが持つタスク一覧を取得します。  
+/// `create_todo`   - 新規タスクを作成します。  
+/// `update_todo`   - 既存のタスクを更新します。  
+/// `delete_todo`   - タスクを削除します。  
+/// `complete_todo` - タスクを完了状態にします。
+
 use async_trait::async_trait;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio_postgres::NoTls;
 use bb8_postgres::{PostgresConnectionManager, bb8::Pool};
-use crate::domain::entities::todo::*;
-use crate::application::errors::todo_error::TodoError;
-use crate::domain::repositories::todo_repository::TodoRepository;
-use crate::{app_log, info_log};
+use crate::{
+    application::errors::todo_error::TodoError,
+    domain::entities::todo::*,
+    domain::repositories::todo_repository::TodoRepository,
+};
 
 pub struct TodoRepositoryImpl {
     pool: Pool<PostgresConnectionManager<NoTls>>,
@@ -20,6 +33,20 @@ impl TodoRepositoryImpl {
 
 #[async_trait]
 impl TodoRepository for TodoRepositoryImpl {
+    /// タスク一覧取得
+    /// 
+    /// ユーザーが持つタスクを取得します。
+    /// 
+    /// # 引数
+    /// 
+    /// * `user_id` - ユーザーID
+    /// 
+    /// # 戻り値
+    /// 
+    /// `Result` を返します：
+    /// 
+    /// - `Ok(Some(Vec<TodoItem>)` - タスクを取得した場合、タスクリストを返します。
+    /// - `Err(TodoError)`         - データベース接続やクエリエラーが発生した場合、カスタムエラーを返します。
     async fn get_todos(
         &self,
         user_id: i32,
@@ -37,8 +64,6 @@ impl TodoRepository for TodoRepositoryImpl {
             "#,
             &[&user_id],
         ).await?;
-
-        info_log!("rows = {:?}", rows);
 
         let todos: Vec<TodoItem> = rows.into_iter().map(|row| {
             // データベースから抽出したタイムスタンプを YYYY-MM-dd HH:mm:ss フォーマットに変換
@@ -65,13 +90,27 @@ impl TodoRepository for TodoRepositoryImpl {
                 deleted_at: row.get::<_, Option<SystemTime>>("deleted_at").map(convert_timestamp),
             };
 
-            info_log!("todo = {:?}", todo);
             todo
         }).collect();
 
         Ok(todos)
     }
 
+    /// タスク作成
+    /// 
+    /// タスクを新規作成します。
+    /// 
+    /// # 引数
+    /// 
+    /// * `user_id` - ユーザーID
+    /// * `todo_req` - `RequestCreateTodoItem` 型のリクエストボディデータ
+    /// 
+    /// # 戻り値
+    /// 
+    /// `Result` を返します：
+    /// 
+    /// - `Ok(Some(ResponseCreateTodoItem)` - タスクを作成した場合、作成したタスクを返します。
+    /// - `Err(TodoError)`                  - データベース接続やクエリエラーが発生した場合、カスタムエラーを返します。
     async fn create_todo(
         &self,
         user_id: i32,
@@ -108,27 +147,20 @@ impl TodoRepository for TodoRepositoryImpl {
         })
     }
 
-    async fn delete_todo(
-        &self,
-        todo_req: &RequestDeleteTodoItem,
-    ) -> Result<(), TodoError> {
-        let conn = self.pool.get().await?;
-
-        conn.execute(
-            r#"
-                UPDATE
-                    todos
-                SET
-                    deleted_at = CURRENT_TIMESTAMP
-                WHERE
-                    id = $1
-            "#,
-            &[&todo_req.id]
-        ).await?;
-
-        Ok(())
-    }
-
+    /// タスク更新
+    /// 
+    /// タスクを更新します。
+    /// 
+    /// # 引数
+    /// 
+    /// * `todo_req` - `RequestUpdateTodoItem` 型のリクエストボディデータ
+    /// 
+    /// # 戻り値
+    /// 
+    /// `Result` を返します：
+    /// 
+    /// - `Ok(())`         - タスクを更新した場合。
+    /// - `Err(TodoError)` - データベース接続やクエリエラーが発生した場合、カスタムエラーを返します。
     async fn update_todo(
         &self,
         todo_req: &RequestUpdateTodoItem,
@@ -158,6 +190,55 @@ impl TodoRepository for TodoRepositoryImpl {
         Ok(())
     }
 
+    /// タスク削除
+    /// 
+    /// タスクを削除します。
+    /// 
+    /// # 引数
+    /// 
+    /// * `todo_req` - `RequestDeleteTodoItem` 型のリクエストボディデータ
+    /// 
+    /// # 戻り値
+    /// 
+    /// `Result` を返します：
+    /// 
+    /// - `Ok(())`         - タスクを削除した場合。
+    /// - `Err(TodoError)` - データベース接続やクエリエラーが発生した場合、カスタムエラーを返します。
+    async fn delete_todo(
+        &self,
+        todo_req: &RequestDeleteTodoItem,
+    ) -> Result<(), TodoError> {
+        let conn = self.pool.get().await?;
+
+        conn.execute(
+            r#"
+                UPDATE
+                    todos
+                SET
+                    deleted_at = CURRENT_TIMESTAMP
+                WHERE
+                    id = $1
+            "#,
+            &[&todo_req.id]
+        ).await?;
+
+        Ok(())
+    }
+
+    /// タスク完了
+    /// 
+    /// タスクを完了します。
+    /// 
+    /// # 引数
+    /// 
+    /// * `todo_req` - `RequestCompleteTodoItem` 型のリクエストボディデータ
+    /// 
+    /// # 戻り値
+    /// 
+    /// `Result` を返します：
+    /// 
+    /// - `Ok(())`         - タスクを完了した場合。
+    /// - `Err(TodoError)` - データベース接続やクエリエラーが発生した場合、カスタムエラーを返します。
     async fn complete_todo(
         &self,
         todo_req: &RequestCompleteTodoItem,
