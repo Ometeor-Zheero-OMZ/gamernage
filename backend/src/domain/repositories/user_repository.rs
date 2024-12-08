@@ -1,3 +1,5 @@
+//! # ユーザーリポジトリ　インタフェース
+
 use async_trait::async_trait;
 use crate::application::{errors::user_error::UserError, jwt::jwt::Claims};
 
