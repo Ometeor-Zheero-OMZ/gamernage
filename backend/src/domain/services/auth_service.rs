@@ -1,17 +1,28 @@
+//! # 認証サービス
+//! 
+//! 認証処理を定義したサービス
+//! 
+//! ## メソッド
+//! 
+//! `guest_login` - ゲストログイン
+//! `signup`      - 新規登録
+//! `login`       - ログイン
+
 use async_trait::async_trait;
-use argon2::{
-    password_hash::{
-        rand_core::OsRng,
-        PasswordHash,
-        PasswordHasher,
-        PasswordVerifier,
-        SaltString
-    },
-    Argon2
+use argon2::Argon2;
+use argon2::password_hash::{
+    rand_core::OsRng,
+    PasswordHash,
+    PasswordHasher,
+    PasswordVerifier,
+    SaltString
 };
 use crate::{
-    application::{errors::auth_error::AuthError, jwt::jwt, types::di_type::AuthRepositoryArc},
-    domain::entities::{auth::{LoginRequest, SignupRequest}, user::User},
+    application::errors::auth_error::AuthError,
+    application::jwt::jwt,
+    application::types::di_type::AuthRepositoryArc,
+    domain::entities::auth::{LoginRequest, SignupRequest},
+    domain::entities::user::User,
     {app_log, error_log}
 };
 
@@ -34,6 +45,21 @@ impl AuthServiceImpl {
 
 #[async_trait]
 impl AuthService for AuthServiceImpl {
+    /// ゲストログイン
+    /// 
+    /// ゲストユーザーとしてログインするための認証を行います。
+    /// 
+    /// # 引数
+    /// 
+    /// * `req` - ログイン情報を含む `LoginRequest` 型の JSON データ
+    /// 
+    /// # 戻り値
+    /// 
+    /// `Result` を返します:
+    /// 
+    /// - `Ok(Some(User))` - 認証が成功し、ゲストログインが完了した場合、`User` 型のデータを返します。
+    /// - `Ok(None)`       - 認証が失敗した場合（例: ユーザーが存在しない、パスワードが一致しない）。
+    /// - `Err(AuthError)` - 認証処理中にエラーが発生した場合、カスタムエラーを返します。
     async fn guest_login(&self, req: &LoginRequest) -> Result<Option<User>, AuthError> {
         let user_opt = self.auth_repository.guest_login(req).await?;
         match user_opt {
@@ -41,7 +67,19 @@ impl AuthService for AuthServiceImpl {
             None => Ok(None)
         }
     }
-
+    /// 新規登録
+    /// 
+    /// 新しいユーザーアカウントを作成します。
+    /// 
+    /// # 引数
+    /// 
+    /// * `req` - 新規登録情報を含む `SignupRequest` 型の JSON データ
+    /// 
+    /// # 戻り値
+    /// 
+    /// `Result` を返します:
+    /// - `Ok(())`         - 新規登録が成功した場合、値を返しません。
+    /// - `Err(AuthError)` - 新規登録に失敗した場合、カスタムエラーを返します。
     async fn signup(&self, req: &SignupRequest) -> Result<(), AuthError> {
         // パスワードを暗号化
         let argon2 = Argon2::default();
@@ -52,7 +90,21 @@ impl AuthService for AuthServiceImpl {
 
         Ok(())
     }
-
+    /// ログイン
+    /// 
+    /// ログインするための認証を行います。
+    /// 
+    /// # 引数
+    /// 
+    /// * `req` - ユーザーのログイン情報を含む `LoginRequest` 型の JSON データ
+    /// 
+    /// # 戻り値
+    /// 
+    /// `Result` を返します:
+    /// 
+    /// - `Ok(Some(User))` - 認証が成功した場合、ログインに成功したユーザーのデータを含む `User` を返します。
+    /// - `Ok(None)`       - 認証に失敗した場合（例: パスワードが一致しない、ユーザーが存在しない）。
+    /// - `Err(AuthError)` - 処理中にエラーが発生した場合、カスタムエラーを返します。
     async fn login(&self, req: &LoginRequest) -> Result<Option<User>, AuthError> {
         if let Some((id, name, email, hashed_password)) = self.auth_repository.get_user_by_email(&req.email).await? {
             // ハッシュ化されたパスワードをパース

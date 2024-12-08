@@ -4,10 +4,10 @@
 //!
 //! ## 関数
 //!
-//! - `guest_login`: ゲストログイン
-//! - `signup`: 新規登録
-//! - `login`: ログイン
-//! - `current_user`: 認証済みユーザーチェック
+//! `guest_login`  - ゲストログイン
+//! `signup`       - 新規登録
+//! `login`        - ログイン
+//! `current_user` - 認証済みユーザーチェック
 
 use actix_web::{HttpResponse, Responder, HttpRequest, web};
 use postgres::error::SqlState;
@@ -22,12 +22,16 @@ use crate::{app_log, error_log, success_log};
 /// 
 /// # 引数
 /// 
-/// * `req` - `LoginRequest` 型の JSON
-/// * `app_state` - DIを含む状態
+/// * `req`       - `LoginRequest` 型の HTTP リクエストデータ
+/// * `app_state` - アプリケーションの状態を管理する
 /// 
-/// # 返却値
+/// # 戻り値
 /// 
-/// 認証済みユーザーデータを返却
+/// `HttpResponse` 型を返します: 
+/// 
+/// - `Ok(HttpResponse::Ok())`         - ログインが成功した場合、ユーザー情報を返します。
+/// - `Err(AuthError::DatabaseError)`  - データベースエラーが発生した場合。
+/// - `Err(AuthError::InvalidRequest)` - リクエストの検証エラーが発生した場合。
 pub async fn guest_login(
     req: web::Json<LoginRequest>,
     app_state: web::Data<AppState>
@@ -51,14 +55,21 @@ pub async fn guest_login(
 
 /// 新規登録
 /// 
+/// ユーザーが新規登録を行うための処理を行います。
+/// 
 /// # 引数
 /// 
-/// * `req` - `SignupRequest` 型の JSON
-/// * `app_state` - DIを含む状態
+/// * `req`       - `SignupRequest` 型の HTTP リクエストデータ
+/// * `app_state` - アプリケーションの状態
 /// 
-/// # 返却値
+/// # 戻り値
 /// 
-/// ステータスコード 200 を返却
+/// `HttpResponse` 型を返します: 
+/// 
+/// - `Ok(())`                - 新規登録が成功した場合、HTTPステータスコード200 (OK) が返されます。
+/// - `Conflict()`            - 登録しようとしたユーザーがすでに存在する場合（ユニーク制約違反）、HTTPステータスコード409 (Conflict)が返されます。
+/// - `InternalServerError()` - 予期しないエラーが発生した場合、HTTPステータスコード500 (Internal Server Error) が返されます。
+/// - `BadRequest()`          - リクエストのバリデーションに失敗した場合、HTTPステータスコード400 (Bad Request)が返されます。
 pub async fn signup(
     req: web::Json<SignupRequest>,
     app_state: web::Data<AppState>
@@ -140,12 +151,16 @@ pub async fn signup(
 /// 
 /// # 引数
 /// 
-/// * `req` - `LoginRequest` 型の JSON
-/// * `app_state` - DIを含む状態
+/// * `req`       - `LoginRequest` 型の HTTP リクエストデータ
+/// * `app_state` - アプリケーションの状態
 /// 
-/// # 返却値
+/// # 戻り値
 /// 
-/// 認証済みユーザーデータを返却
+/// `HttpResponse` 型を返します: 
+/// 
+/// - `Ok(user_data)`         - ログインに成功した場合、ユーザーのデータを含んだレスポンスを返します。
+/// - `Unauthorized()`        - ユーザーが存在しない場合、HTTPステータスコード401 (Unauthorized)を返します。
+/// - `InternalServerError()` - 予期しないエラーが発生した場合、500 (InternalServerError)を返します。
 pub async fn login(
     req: web::Json<LoginRequest>,
     app_state: web::Data<AppState>
@@ -171,13 +186,18 @@ pub async fn login(
 
 /// 認証済みユーザーチェック
 /// 
+/// ヘッダーに含まれるトークンを使って、認証されたユーザー情報を取得します。
+/// 
 /// # 引数
 /// 
-/// * `req` - ヘッダーにトークンを含むリクエスト
+/// * `req` - `HttpRequest` 型のリクエストオブジェクト。ヘッダーにトークンを含むリクエスト
 /// 
-/// # 返却値
+/// # 戻り値
 /// 
-/// 認証済みユーザーデータを返却
+/// `Result` 型を返します: 
+/// 
+/// - `Ok(user_info)` - 認証されたユーザー情報が取得できた場合。ユーザー情報をJSON形式で返します。
+/// - `Unauthorized()` - トークンが無効または存在しない場合。認証エラーを返します。
 pub async fn current_user(req: HttpRequest) -> impl Responder {
     match jwt::verify(&req) {
         Ok(user_info) => HttpResponse::Ok().json(user_info),

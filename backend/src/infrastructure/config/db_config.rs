@@ -1,3 +1,11 @@
+//! DB接続設定
+//! 
+//! DB接続に必要な値を環境変数として取得し、Config に設定
+//! 
+//! # 関数
+//! 
+//! * `get_config` - `tokio_postgres::Config` を作成し、各環境変数を設定
+
 use std::env;
 
 // SSL証明書発行後に設定
