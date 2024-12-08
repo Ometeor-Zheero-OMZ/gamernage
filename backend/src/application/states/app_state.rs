@@ -6,14 +6,15 @@
 use std::sync::Arc;
 use bb8_postgres::{bb8::Pool, PostgresConnectionManager};
 use postgres::NoTls;
-
-use crate::application::types::di_type::{AuthServiceArc, TodoServiceArc, UserServiceArc};
-use crate::domain::services::auth_service::AuthServiceImpl;
-use crate::domain::services::todo_service::TodoServiceImpl;
-use crate::domain::services::user_service::UserServiceImpl;
-use crate::infrastructure::repositories::auth_repository::AuthRepositoryImpl;
-use crate::infrastructure::repositories::todo_repository::TodoRepositoryImpl;
-use crate::infrastructure::repositories::user_repository::UserRepositoryImpl;
+use crate::{
+    application::types::di_type::{AuthServiceArc, TodoServiceArc, UserServiceArc},
+    domain::services::auth_service::AuthServiceImpl,
+    domain::services::todo_service::TodoServiceImpl,
+    domain::services::user_service::UserServiceImpl,
+    infrastructure::repositories::auth_repository::AuthRepositoryImpl,
+    infrastructure::repositories::todo_repository::TodoRepositoryImpl,
+    infrastructure::repositories::user_repository::UserRepositoryImpl
+};
 
 #[derive(Clone)]
 pub struct AppState {

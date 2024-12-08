@@ -1,7 +1,11 @@
 //! # 認証リポジトリ　インタフェース
 
-use async_trait::async_trait;use crate::domain::entities::{auth::LoginRequest, user::User};
-use crate::application::errors::auth_error::AuthError;
+use async_trait::async_trait;
+use crate::{
+    application::errors::auth_error::AuthError,
+    domain::entities::auth::LoginRequest,
+    domain::entities::user::User
+};
 
 #[async_trait]
 pub trait AuthRepository: Send + Sync {

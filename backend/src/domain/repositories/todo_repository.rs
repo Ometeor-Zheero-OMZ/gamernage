@@ -1,8 +1,10 @@
 //! # タスクリポジトリ　インタフェース
 
 use async_trait::async_trait;
-use crate::domain::entities::todo::*;
-use crate::application::errors::todo_error::TodoError;
+use crate::{
+    application::errors::todo_error::TodoError,
+    domain::entities::todo::*
+};
 
 #[async_trait]
 pub trait TodoRepository: Send + Sync {

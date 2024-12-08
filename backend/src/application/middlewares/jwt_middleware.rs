@@ -7,7 +7,8 @@ use actix_web::{body::EitherBody, dev};
 use actix_service::Service;
 use actix_web::{
     dev::{ServiceRequest, ServiceResponse, Transform},
-    Error, HttpResponse,
+    Error, 
+    HttpResponse,
 };
 use futures::future::{ok, Ready, LocalBoxFuture};
 use crate::application::jwt::jwt;
