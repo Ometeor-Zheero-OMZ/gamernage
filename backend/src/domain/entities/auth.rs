@@ -39,7 +39,7 @@ pub struct LoginRequest {
 /// 
 /// * `password` - パスワード
 /// 
-/// # 返却値
+/// # 戻り値
 /// 
 /// なし
 fn validate_email(email: &str) -> Result<(), ValidationError> {
@@ -81,7 +81,7 @@ fn validate_email(email: &str) -> Result<(), ValidationError> {
 /// 
 /// * `password` - パスワード
 /// 
-/// # 返却値
+/// # 戻り値
 /// 
 /// なし
 fn validate_password(password: &str) -> Result<(), ValidationError> {
