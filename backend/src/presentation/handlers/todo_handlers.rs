@@ -22,16 +22,22 @@ use crate::domain::entities::todo::{
 };
 use crate::{app_log, error_log};
 
-/// TODO 取得
+/// タスク一覧の取得
+/// 
+/// 認証されたユーザーのタスクリストを取得します。
 /// 
 /// # 引数
 /// 
-/// * `req` - ヘッダーにトークンを含むリクエスト
-/// * `app_state` - DIを含む状態
+/// * `req`       - ヘッダーにJWTトークンを含むHTTPリクエスト
+/// * `app_state` - アプリケーションの状態
 /// 
-/// # 返却値
+/// # 戻り値
 /// 
-/// 認証ユーザーが持つ TODO を返却
+/// `HttpResponse` 型を返します: 
+/// 
+/// - `Ok(todos)`             - タスクリストが正常に取得された場合、`タスクリストを返します。
+/// - `Unauthorized()`        - ユーザーが認証されていない場合。
+/// - `InternalServerError()` - サーバーエラーが発生した場合。
 pub async fn get_todos(
     req: HttpRequest,
     app_state: web::Data<AppState>
@@ -56,17 +62,23 @@ pub async fn get_todos(
     }
 }
 
-/// TODO 作成
+/// タスクの新規作成
+/// 
+/// 認証されたユーザーが新しいタスクを作成します。
 /// 
 /// # 引数
 /// 
-/// * `req` - ヘッダーにトークンを含むリクエスト
-/// * `todo_req` - `RequestCreateTodoItem` 型の JSON
-/// * `app_state` - DIを含む状態
+/// * `req`       - ヘッダーにJWTトークンを含むHTTPリクエスト
+/// * `todo_req`  - `RequestCreateTodoItem` 型のJSON
+/// * `app_state` - アプリケーションの状態
 /// 
-/// # 返却値
+/// # 戻り値
 /// 
-/// 認証ユーザーが持つ TODO を返却
+/// `HttpResponse` 型を返します: 
+/// 
+/// - `Ok(response)`          - タスクが正常に作成された場合、作成されたタスクの詳細を返します。
+/// - `Unauthorized()`        - ユーザーが認証されていない場合。
+/// - `InternalServerError()` - サーバーエラーが発生した場合。
 pub async fn create_todo(
     req: HttpRequest,
     todo_req: web::Json<RequestCreateTodoItem>,
@@ -90,17 +102,23 @@ pub async fn create_todo(
     }
 }
 
-/// TODO 更新
+/// タスクの更新
+/// 
+/// 認証されたユーザーが既存のタスクを更新します。
 /// 
 /// # 引数
 /// 
-/// * `req` - ヘッダーにトークンを含むリクエスト
-/// * `todo_req` - `RequestUpdateTodoItem` 型の JSON
-/// * `app_state` - DIを含む状態
+/// * `req`       - ヘッダーにJWTトークンを含むHTTPリクエスト
+/// * `todo_req`  - `RequestUpdateTodoItem` 型のJSON
+/// * `app_state` - アプリケーションの状態
 /// 
-/// # 返却値
+/// # 戻り値
 /// 
-/// ステータスコード 200 を返却
+/// `HttpResponse` 型を返します: 
+/// 
+/// - `Ok(())`                - タスクが正常に更新された場合。
+/// - `Unauthorized()`        - ユーザーが認証されていない場合。
+/// - `InternalServerError()` - サーバーエラーが発生した場合。
 pub async fn update_todo(
     req: HttpRequest,
     todo_req: web::Json<RequestUpdateTodoItem>,
@@ -124,17 +142,23 @@ pub async fn update_todo(
     }
 }
 
-/// TODO 削除
+/// タスクの削除
+/// 
+/// 既存のタスクを削除します。
 /// 
 /// # 引数
 /// 
-/// * `req` - ヘッダーにトークンを含むリクエスト
-/// * `todo_req` - `RequestDeleteTodoItem` 型の JSON
-/// * `app_state` - DIを含む状態
+/// * `req`       - ヘッダーにJWTトークンを含むHTTPリクエスト
+/// * `todo_req`  - `RequestDeleteTodoItem` 型のJSON
+/// * `app_state` - アプリケーションの状態
 /// 
-/// # 返却値
+/// # 戻り値
 /// 
-/// ステータスコード 200 を返却
+/// `HttpResponse` 型を返します: 
+/// 
+/// - `Ok(())`                - タスクが正常に削除された場合。
+/// - `Unauthorized()`        - ユーザーが認証されていない場合。
+/// - `InternalServerError()` - サーバーエラーが発生した場合。
 pub async fn delete_todo(
     req: HttpRequest,
     todo_req: web::Json<RequestDeleteTodoItem>,
@@ -158,17 +182,23 @@ pub async fn delete_todo(
     }
 }
 
-/// TODO 完了
+/// タスクの完了
+/// 
+/// 認証されたユーザーがタスクを完了済みにします。
 /// 
 /// # 引数
 /// 
-/// * `req` - ヘッダーにトークンを含むリクエスト
-/// * `todo_req` - `RequestCompleteTodoItem` 型の JSON
-/// * `app_state` - DIを含む状態
+/// * `req`       - ヘッダーにJWTトークンを含むHTTPリクエスト
+/// * `todo_req`  - `RequestCompleteTodoItem` 型のJSON
+/// * `app_state` - DIを含むアプリケーションの状態
 /// 
-/// # 返却値
+/// # 戻り値
 /// 
-/// ステータスコード 200 を返却
+/// `HttpResponse` 型を返します: 
+/// 
+/// - `Ok(())`                - タスクが正常に完了した場合。
+/// - `Unauthorized()`        - ユーザーが認証されていない場合。
+/// - `InternalServerError()` - サーバーエラーが発生した場合。
 pub async fn complete_todo(
     req: HttpRequest,
     todo_req: web::Json<RequestCompleteTodoItem>,
