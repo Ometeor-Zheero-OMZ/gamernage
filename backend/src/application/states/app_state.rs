@@ -1,20 +1,30 @@
+//! # アプリケーション状態
+//! 
+//! アプリケーション実行中に使用するサービス・リポジトリを管理
+//! 各サービスは DI に基づいて初期化され、`AppState` を通じてアクセス可能
+
 use std::sync::Arc;
 use bb8_postgres::{bb8::Pool, PostgresConnectionManager};
 use postgres::NoTls;
-
-use crate::application::types::di_type::{AuthServiceArc, TodoServiceArc, UserServiceArc};
-use crate::domain::services::auth_service::AuthServiceImpl;
-use crate::domain::services::todo_service::TodoServiceImpl;
-use crate::domain::repositories::todo_repository::TodoRepositoryImpl;
-use crate::domain::services::user_service::UserServiceImpl;
-use crate::infrastructure::repositories::auth_repository::AuthRepositoryImpl;
-use crate::infrastructure::repositories::user_repository::UserRepositoryImpl;
+use crate::{
+    application::types::di_type::{AuthServiceArc, TodoServiceArc, UserServiceArc},
+    domain::services::auth_service::AuthServiceImpl,
+    domain::services::todo_service::TodoServiceImpl,
+    domain::services::user_service::UserServiceImpl,
+    infrastructure::repositories::auth_repository::AuthRepositoryImpl,
+    infrastructure::repositories::todo_repository::TodoRepositoryImpl,
+    infrastructure::repositories::user_repository::UserRepositoryImpl
+};
 
 #[derive(Clone)]
 pub struct AppState {
+    /// 認証サービス
     pub auth_service: AuthServiceArc,
+
+    /// タスク管理サービス
     pub todo_service: TodoServiceArc,
-    // ユーザー検索機能を実装予定のため dead_code は無視する
+
+    /// ユーザー管理サービス
     pub user_service: UserServiceArc
 }
 

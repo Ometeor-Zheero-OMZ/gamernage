@@ -1,46 +1,10 @@
-//! # JWT Encoding and Decoding Module
+//! # JWT エンコード & デコード
 //!
-//! This module provides functionality for creating, decoding, and verifying JWT (JSON Web Token) in a Rust application.
-//! It uses the `jsonwebtoken` crate to handle the encoding and decoding of JWT tokens. It also defines a trait for
-//! extracting request headers, which is used for token validation in HTTP requests.
-//!
-//! ## Overview
-//!
-//! The `jwt` module includes functions for creating JWTs with user information, decoding JWTs to extract claims, 
-//! and verifying JWTs from HTTP requests. It uses a fixed secret key for signing the tokens and sets an expiration
-//! time for the tokens. The module also provides a trait `RequestHeaders` to handle different types of requests,
-//! allowing extraction of headers for token verification.
-//!
-//! ## Dependencies
-//!
-//! This module depends on the following crates:
-//! - `actix_web`: Provides core web server functionality, including HTTP request handling.
-//! - `jsonwebtoken`: Provides functionality for encoding and decoding JWT tokens.
-//! - `serde`: Provides serialization and deserialization capabilities for Rust data structures.
-//!
-//! ## Usage
-//!
-//! To use this module, you need to integrate the functions into your application logic for token handling. The `create_token`
-//! function generates a new JWT with the specified user information. The `decode_token` function decodes an existing JWT to
-//! extract the claims. The `verify` function checks if a JWT is valid and extracts user information from it.
-//!
-//! # Example
-//!
-//! ```rust
-//! use crate::api::jwt;
-//!
-//! // Creating a token
-//! let email = "user@example.com";
-//! let id = 1;
-//! let token = jwt::create_token(email, &id).expect("Failed to create token");
-//!
-//! // Verifying a token
-//! let req = ...; // Assume req is an instance of `HttpRequest` or `ServiceRequest`
-//! match jwt::verify(&req) {
-//!     Ok(claims) => println!("Token is valid: {:?}", claims),
-//!     Err(err) => println!("Token verification failed: {}", err),
-//! }
-//! ```
+//! ## 関数
+//! 
+//! - `create_token`: JWTをエンコード
+//! - `decode_token`: JWTをデコード
+//! - `verify`:       JWTを検証
 
 use actix_web::{HttpRequest, http::header::HeaderMap, dev::ServiceRequest};
 use jsonwebtoken::{encode, decode, Header, Algorithm, EncodingKey, DecodingKey, Validation, TokenData};
@@ -50,13 +14,13 @@ use std::time::{SystemTime, Duration};
 use crate::application::helpers::message::AUTH_MSG;
 use crate::{app_log, error_log};
 
-/// Struct representing JWT claims.
+/// JWT Claims 構造体
 ///
-/// # Fields
+/// # フィールド
 ///
-/// * `id` - The user ID.
-/// * `sub` - The subject (user email).
-/// * `exp` - The expiration time of the token (UNIX timestamp).
+/// * `id`  - ユーザーID.
+/// * `sub` - サブジェクト（Eメール）.
+/// * `exp` - トークンの有効期限 (UNIX タイムスタンプ).
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Claims {
     pub id: i32,
@@ -64,42 +28,33 @@ pub struct Claims {
     pub exp: usize,
 }
 
-/// Trait for extracting headers from HTTP requests.
-///
-/// This trait is implemented for both `HttpRequest` and `ServiceRequest` to provide a unified way to access
-/// request headers.
+/// ヘッダーを抽出　トレイト
 pub trait RequestHeaders {
     fn get_headers(&self) -> &HeaderMap;
 }
-
+/// HttpRequest からヘッダーを抽出
 impl RequestHeaders for HttpRequest {
     fn get_headers(&self) -> &HeaderMap {
         self.headers()
     }
 }
-
+/// ServiceRequest からヘッダーを抽出
 impl RequestHeaders for ServiceRequest {
     fn get_headers(&self) -> &HeaderMap {
         self.headers()
     }
 }
 
-/// Creates a JWT token for the specified user.
+/// JWTをエンコード
 ///
-/// # Arguments
+/// # 引数
 ///
-/// * `email` - The user's email address (`&str`).
-/// * `id` - The user's ID (`&i32`).
+/// * `email` - ユーザーのEメール
+/// * `id`    - ユーザーID
 ///
-/// # Returns
+/// # 戻り値
 ///
-/// * `Result<String, jsonwebtoken::errors::Error>` - The encoded JWT token.
-///
-/// # Example
-///
-/// ```rust
-/// let token = jwt::create_token(&email, &id)?;
-/// ```
+/// * `Result<String, jsonwebtoken::errors::Error>` - エンコード化したトークン
 pub fn create_token(email: &str, id: &i32) -> Result<String, jsonwebtoken::errors::Error> {
 
     // トークンの有効期限 10日
@@ -119,24 +74,15 @@ pub fn create_token(email: &str, id: &i32) -> Result<String, jsonwebtoken::error
     )
 }
 
-/// Decodes a JWT token to extract the claims.
+/// JWTをデコード
 ///
-/// # Arguments
+/// # 引数
 ///
-/// * `token` - The JWT token (`&str`).
+/// * `token` - トークン
 ///
-/// # Returns
+/// # 戻り値
 ///
-/// * `Result<TokenData<Claims>, jsonwebtoken::errors::Error>` - The decoded token data containing the claims.
-///
-/// # Example
-///
-/// ```rust
-/// match jwt::decode_token(token) {
-///     Ok(data) => println!("Token claims: {:?}", data.claims),
-///     Err(err) => eprintln!("Failed to decode token: {}", err),
-/// }
-/// ```
+/// * `Result<String, jsonwebtoken::errors::Error>` - エンコード化したトークン
 pub fn decode_token(token: &str) -> Result<TokenData<Claims>, jsonwebtoken::errors::Error> {
     decode::<Claims>(
         token,
@@ -145,21 +91,15 @@ pub fn decode_token(token: &str) -> Result<TokenData<Claims>, jsonwebtoken::erro
     )
 }
 
-/// Verifies a JWT token from an HTTP request.
+/// JWTを検証
 ///
-/// # Arguments
+/// # 引数
 ///
-/// * `req` - The HTTP request (`R: RequestHeaders`).
+/// * `req` - リクエスト
 ///
-/// # Returns
+/// # 戻り値
 ///
-/// * `Result<Claims, String>` - The claims extracted from the token if it is valid; otherwise, an error message.
-///
-/// # Example
-///
-/// ```rust
-/// let claims = jwt::verify(&req)?;
-/// ```
+/// * `Result<Claims, String>` - Claims
 pub fn verify <R: RequestHeaders>(req: &R)  -> Result<Claims, String> {
     // リクエストヘッダーから Bearer トークンを抽出できる場合
     if let Some(auth_header) = req.get_headers().get("Authorization") {

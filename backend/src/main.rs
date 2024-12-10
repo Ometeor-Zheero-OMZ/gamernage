@@ -3,10 +3,10 @@ use actix_web::{web::Data, App, HttpServer};
 use dotenvy::dotenv;
 use std::env;
 
-use application::middlewares::jwt_middleware;
+use application::middlewares::jwt_middleware::JwtMiddleware;
 use application::states::app_state::AppState;
 use infrastructure::db::connection::get_db_pool;
-use presentation::routes::routes::api_scopes;
+use presentation::routes::api_routes::api_scopes;
 
 mod application;
 mod domain;
@@ -14,10 +14,13 @@ mod infrastructure;
 mod presentation;
 mod tests;
 
+extern crate num_cpus;
+
 const PROJECT_PATH: &'static str = env!("CARGO_MANIFEST_DIR");
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    // 初期設定
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
     dotenv().ok();
 
@@ -28,22 +31,28 @@ async fn main() -> std::io::Result<()> {
     let pool = get_db_pool().await;
     let app_state = AppState::init(&pool);
 
+    let cors_max_age: usize = env::var("CORS_MAX_AGE")
+        .unwrap_or_else(|_| "3600".to_string())
+        .parse()
+        .expect("環境変数 `CORS_MAX_AGE` は正しい整数値で設定する必要があります。");
+
+    // Web サーバー起動
     HttpServer::new(move || {
         let cors = Cors::default()
             .allow_any_origin()
-            .allowed_methods(vec!["GET", "PUT", "POST", "DELETE"])
+            .allowed_methods(vec!["GET", "PUT", "PATCH", "POST", "DELETE"])
             .allowed_headers(vec!["Authorization", "Content-Type"])
-            .max_age(60 * 60 * 24);
+            .max_age(cors_max_age);
 
         App::new()
-            .wrap(jwt_middleware::JwtMiddleware)
+            .wrap(JwtMiddleware)
             .wrap(cors)
             .app_data(Data::new(pool.clone()))
             .app_data(Data::new(app_state.clone()))
             .service(api_scopes())
     })
     .bind(uri)?
-    .workers(20)
+    .workers(num_cpus::get())
     .run()
     .await
 }
