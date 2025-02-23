@@ -7,12 +7,12 @@ use std::sync::Arc;
 use bb8_postgres::{bb8::Pool, PostgresConnectionManager};
 use postgres::NoTls;
 use crate::{
-    application::types::di_type::{AuthServiceArc, TodoServiceArc, UserServiceArc},
+    application::types::di_type::{AuthServiceArc, TaskServiceArc, UserServiceArc},
     domain::services::auth_service::AuthServiceImpl,
-    domain::services::todo_service::TodoServiceImpl,
+    domain::services::task_service::TaskServiceImpl,
     domain::services::user_service::UserServiceImpl,
     infrastructure::repositories::auth_repository::AuthRepositoryImpl,
-    infrastructure::repositories::todo_repository::TodoRepositoryImpl,
+    infrastructure::repositories::task_repository::TaskRepositoryImpl,
     infrastructure::repositories::user_repository::UserRepositoryImpl
 };
 
@@ -22,7 +22,7 @@ pub struct AppState {
     pub auth_service: AuthServiceArc,
 
     /// タスク管理サービス
-    pub todo_service: TodoServiceArc,
+    pub task_service: TaskServiceArc,
 
     /// ユーザー管理サービス
     pub user_service: UserServiceArc
@@ -31,15 +31,15 @@ pub struct AppState {
 impl AppState {
     pub fn init(pool: &Pool<PostgresConnectionManager<NoTls>>) -> AppState {
         let auth_repository= Arc::new(AuthRepositoryImpl::new(pool.clone()));
-        let todo_repository= Arc::new(TodoRepositoryImpl::new(pool.clone()));
+        let task_repository= Arc::new(TaskRepositoryImpl::new(pool.clone()));
         let user_repository= Arc::new(UserRepositoryImpl::new(pool.clone()));
         let user_service = Arc::new(UserServiceImpl::new(user_repository.clone()));
         let auth_service= Arc::new(AuthServiceImpl::new(auth_repository.clone()));
-        let todo_service= Arc::new(TodoServiceImpl::new(todo_repository.clone(), user_service.clone()));
+        let task_service= Arc::new(TaskServiceImpl::new(task_repository.clone(), user_service.clone()));
 
         AppState {
             auth_service,
-            todo_service,
+            task_service,
             user_service
         }
     }

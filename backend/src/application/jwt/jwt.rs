@@ -10,9 +10,10 @@ use actix_web::{HttpRequest, http::header::HeaderMap, dev::ServiceRequest};
 use jsonwebtoken::{encode, decode, Header, Algorithm, EncodingKey, DecodingKey, Validation, TokenData};
 use serde::{Serialize, Deserialize};
 use std::time::{SystemTime, Duration};
+use std::env;
 
 use crate::application::helpers::message::AUTH_MSG;
-use crate::{app_log, error_log};
+use crate::{app_log, error_log, info_log};
 
 /// JWT Claims 構造体
 ///
@@ -84,9 +85,13 @@ pub fn create_token(email: &str, id: &i32) -> Result<String, jsonwebtoken::error
 ///
 /// * `Result<String, jsonwebtoken::errors::Error>` - エンコード化したトークン
 pub fn decode_token(token: &str) -> Result<TokenData<Claims>, jsonwebtoken::errors::Error> {
+    let jwt_secret = env::var("JWT_SECRET").expect("環境変数 `JWT_SECRET` は設定する必要があります。");
+
+    info_log!("[jwt] - [decode_token] jwt_secret = {}", jwt_secret);
+
     decode::<Claims>(
         token,
-        &DecodingKey::from_secret("secret".as_ref()),
+        &DecodingKey::from_secret(jwt_secret.as_ref()),
         &Validation::new(Algorithm::HS256)
     )
 }

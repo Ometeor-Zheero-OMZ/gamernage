@@ -15,10 +15,11 @@ use jsonwebtoken;
 
 #[derive(Debug)]
 pub enum UserError {
-    DatabaseError(String),
+    DatabaseError(tokio_postgres::Error),
     PoolError(bb8::RunError<tokio_postgres::Error>),
     HashingError(argon2::password_hash::Error),
     TokenCreationError(jsonwebtoken::errors::Error),
+    ValidationError(validator::ValidationErrors),
     UserNotFound,
 }
 
@@ -29,7 +30,8 @@ impl fmt::Display for UserError {
             UserError::PoolError(err) => write!(f, "Pool error: {}", err),
             UserError::HashingError(err) => write!(f, "Password hashing error: {}", err),
             UserError::TokenCreationError(err) => write!(f, "JWT error: {}", err),
-            UserError::UserNotFound => write!(f, "user not found"),
+            UserError::ValidationError(err) => write!(f, "Validation error: {}", err),
+            UserError::UserNotFound => write!(f, "User not found"),
         }
     }
 }
@@ -38,7 +40,7 @@ impl std::error::Error for UserError {}
 
 impl From<tokio_postgres::Error> for UserError {
     fn from(error: tokio_postgres::Error) -> Self {
-        UserError::DatabaseError(error.to_string())
+        UserError::DatabaseError(error)
     }
 }
 
@@ -57,6 +59,12 @@ impl From<argon2::password_hash::Error> for UserError {
 impl From<jsonwebtoken::errors::Error> for UserError {
     fn from(error: jsonwebtoken::errors::Error) -> Self {
         UserError::TokenCreationError(error)
+    }
+}
+
+impl From<validator::ValidationErrors> for UserError {
+    fn from(error: validator::ValidationErrors) -> Self {
+        UserError::ValidationError(error)
     }
 }
 
