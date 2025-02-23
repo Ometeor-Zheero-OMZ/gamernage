@@ -1,105 +1,63 @@
 "use client";
-
-import { FaLocationArrow } from "react-icons/fa6";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import Navbar from "@/components/Navbar";
-import Cta from "@/components/Cta";
-import Footer from "@/components/Footer";
-import SignupModal from "@/components/Modal/SignupModal";
-import OutlineButton from "@/components/ui/OutlineButton";
-import SimpleColorfulButton from "@/components/ui/SimpleColorfulButton";
-import { Toaster } from "@/components/ui/Toaster";
+import { useTasks } from "@/context/taskContext";
+import useRedirect from "@/hooks/useUserRedirect";
+import Filters from "./Components/Filters/Filters";
+import TaskItem from "./Components/TaskItem/TaskItem";
+import { Task } from "@/utils/types";
+import { filteredTasks } from "@/utils/utilities";
+import { useEffect } from "react";
+import { motion } from "framer-motion";
+import { container, item } from "@/utils/animations";
+import { useUserContext } from "@/context/userContext";
 
 export default function Home() {
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [isSignupVisible, setIsSignupVisible] = useState(false);
-  const router = useRouter();
-  const { user, guestLogin } = useAuth();
-  const { toast } = useToast();
+  console.log("タスクページ");
 
-  const handleGuestLogin = async () => {
-    setIsLoggingIn(true);
-    let isSuccess = await guestLogin();
-    setIsLoggingIn(false);
+  const { loggedIn, loading } = useUserContext();
+  const { tasks, openModalForAdd, priority, setPriority } = useTasks();
 
-    if (isSuccess) {
-      router.push("/homepage");
-    } else {
-      toast({
-        title: "Authentication Failure",
-        description: "Failed to login. Please try again.",
-        variant: "destructive",
-        style: {
-          borderColor: "#eb3939",
-          backgroundColor: "#eb3939",
-          boxShadow: "0 10px 15px rgba(0, 0, 0, 0.3)",
-        },
-      });
-    }
-  };
+  const filtered = filteredTasks(tasks, priority);
 
-  const handleCloseSignup = () => {
-    setIsSignupVisible(false);
-  };
-
-  const handleSignupClick = () => {
-    setIsSignupVisible(true);
-  };
+  if (loggedIn === false) {
+    useRedirect("/login");
+  }
 
   useEffect(() => {
-    if (user === null) return;
+    console.log("認証ページのuseEffect");
+    setPriority("all");
+  }, []);
 
-    if (user) {
-      router.push("/homepage");
-    } else {
-      router.push("/");
-    }
-  }, [user, router]);
+  if (loading) {
+    <div className="auth-page text-white text-7xl flex justify-center items-center">
+      Loading...
+    </div>;
+  }
 
   return (
-    <>
-      <Navbar />
-      {/* Hero Container */}
-      <div
-        className="w-full h-screen bg-cover bg-center bg-no-repeat overflow-hidden relative"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(53, 82, 66, 0.5), rgba(47, 80, 63, 0.6)), url(/img/bg-nightsky.png)",
-        }}
-      >
-        <div className="w-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-          <h1 className="font-teko text-[100px] text-[#ddd] font-light mb-[30px] animate-moveToLeft">
-            Harness{" "}
-            <span className="text-white font-dotGothic16 font-normal uppercase text-center m-0 animate-shadows text-[calc(2rem+5vw)] tracking-[0.4rem]">
-              Ataria
-            </span>
-          </h1>
-          <p className="font-teko text-6xl font-bold text-[#ddd] text-light mb-20 animate-moveToRight tracking-wider sm:text-5xl md:text-5xl lg:text-6xl">
-            Share Your Game
-          </p>
-          <SimpleColorfulButton
-            title="Guest Login"
-            // position="right"
-            // icon={<FaLocationArrow />} // 矢印アイコン
-            handleClick={handleGuestLogin}
-            aria-label="Guest Login"
-            otherClasses=""
-          />
-          <SimpleColorfulButton
-            title="Get Started"
-            handleClick={handleSignupClick}
-          />
-        </div>
+    <main className="m-6 h-full">
+      <div className="flex justify-between">
+        <h1 className="text-2xl text-[#EDEDED] font-bold">All Tasks</h1>
+        <Filters />
       </div>
-      <Toaster />
 
-      <SignupModal isVisible={isSignupVisible} onClose={handleCloseSignup} />
-
-      <Cta />
-      <Footer />
-    </>
+      <motion.div
+        className="pb-[2rem] mt-6 grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-[1.5rem]"
+        variants={container}
+        initial="hidden"
+        animate="visible"
+      >
+        {filtered?.map((task: Task, i: number) => (
+          <TaskItem key={i} task={task} />
+        ))}
+        <motion.button
+          className="h-[16rem] w-full py-2 rounded-md text-lg font-medium text-gray-500 border-dashed border-2 border-gray-400
+          hover:bg-gray-700 hover:text-[#EDEDED] hover:border-none transition duration-200 ease-in-out"
+          onClick={openModalForAdd}
+          variants={item}
+        >
+          Add New Task
+        </motion.button>
+      </motion.div>
+    </main>
   );
 }

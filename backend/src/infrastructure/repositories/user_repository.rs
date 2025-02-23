@@ -10,9 +10,8 @@ use async_trait::async_trait;
 use tokio_postgres::NoTls;
 use bb8_postgres::{PostgresConnectionManager, bb8::Pool};
 use crate::{
-    application::errors::user_error::UserError,
-    application::jwt::jwt::Claims,
-    domain::repositories::user_repository::UserRepository,
+    application::{errors::user_error::UserError, jwt::jwt::Claims},
+    domain::{entities::user::UserResponse, repositories::user_repository::UserRepository},
 };
 
 pub struct UserRepositoryImpl {
@@ -50,7 +49,7 @@ impl UserRepository for UserRepositoryImpl {
                 SELECT
                     user_id
                 FROM
-                    user_profiles
+                    users
                 WHERE
                     email = $1
             "#,
@@ -61,5 +60,43 @@ impl UserRepository for UserRepositoryImpl {
             let user_id= r.get("user_id");
             user_id
         }))
+    }
+
+    async fn find_user_by_id(&self, user_id: &str) -> Result<Option<UserResponse>, UserError> {
+        let conn = self.pool.get().await?;
+
+        let row_opt = conn.query_opt(
+            r#"
+                SELECT 
+                    id,
+                    name,
+                    email,
+                    role,
+                    photo,
+                    bio,
+                    is_verified
+                FROM
+                    users
+                WHERE
+                    id = $1;
+            "#,
+            &[&user_id]
+        ).await;
+
+        match row_opt {
+            Ok(Some(row)) => {
+                Ok(Some(UserResponse {
+                    id: row.get("id"),
+                    name: row.get("name"),
+                    email: row.get("email"),
+                    role: row.get("role"),
+                    photo: row.get("photo"),
+                    bio: row.get("bio"),
+                    is_verified: row.get("is_verified"),
+                }))
+            },
+            Ok(None) => Ok(None),
+            Err(err) => Err(UserError::DatabaseError(err.into())),
+        } 
     }
 }

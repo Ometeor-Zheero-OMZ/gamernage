@@ -1,3 +1,3 @@
 pub mod auth;
-pub mod todo;
+pub mod task;
 pub mod user;

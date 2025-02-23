@@ -1,31 +1,57 @@
-import "@/public/styles/globals.css";
+import type { Metadata } from "next";
+import "./globals.css";
+import { Toaster } from "react-hot-toast";
+import UserProvider from "@/providers/UserProvider";
 import { Inter } from "next/font/google";
-import { AuthProvider } from "@/context/AuthContext";
+import MiniSidebar from "./Components/MiniSidebar/MiniSidebar";
+import Header from "./Components/Header/Header";
+import MainContentLayout from "@/providers/MainContentLayout";
+import SidebarProvider from "@/providers/SidebarProvider";
+import MainLayout from "@/providers/MainLayout";
+import GTMInitialiser from "@/providers/GTMInitialiser";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin"],
+});
 
-export const metadata = {
-  title: "Ataria Game Engine",
+export const metadata: Metadata = {
+  title: "Gamernage - GameAir",
   description:
-    "Ataria is a game engine aimed for the versatiles who yearns to create, share, and play your own games",
-  openGraph: {
-    title: "Ataria Game Engine",
-    description:
-      "Ataria is a game engine aimed for the versatiles who yearns to create, share, and play your own games",
-    url: "https://your-site-url.com",
-    type: "website",
-  },
+    "Maintain a healthy balance between work and gaming. Strive for a good equilibrium.",
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html lang="en">
+      <head>
+        <GTMInitialiser />
+        <link
+          rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+          integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
+          crossOrigin="anonymous"
+          referrerPolicy="no-referrer"
+        />
+      </head>
       <body className={inter.className}>
-        <AuthProvider>{children}</AuthProvider>
+        <UserProvider>
+          <Toaster position="top-center" />
+
+          <div className="h-full flex overflow-hidden bg-[#000D0D]">
+            <MiniSidebar />
+            <div className="flex-1 flex flex-col">
+              <Header />
+              <MainContentLayout>
+                <MainLayout>{children}</MainLayout>
+                <SidebarProvider />
+              </MainContentLayout>
+            </div>
+          </div>
+        </UserProvider>
       </body>
     </html>
   );
