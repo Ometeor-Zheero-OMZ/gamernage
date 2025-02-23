@@ -18,7 +18,9 @@ pub enum AuthError {
     PoolError(bb8::RunError<tokio_postgres::Error>),
     HashingError(argon2::password_hash::Error),
     TokenCreationError(jsonwebtoken::errors::Error),
-    ValidationError(validator::ValidationErrors)
+    ValidationError(validator::ValidationErrors),
+    UserNotFound,
+    InvalidCredentials
 }
 
 impl fmt::Display for AuthError {
@@ -29,6 +31,8 @@ impl fmt::Display for AuthError {
             AuthError::HashingError(err) => write!(f, "Password hashing error: {}", err),
             AuthError::TokenCreationError(err) => write!(f, "JWT error: {}", err),
             AuthError::ValidationError(err) => write!(f, "Validation error: {}", err),
+            AuthError::UserNotFound => write!(f, "User not found"),
+            AuthError::InvalidCredentials => write!(f, "Invalid credentials")
         }
     }
 }
@@ -62,5 +66,11 @@ impl From<jsonwebtoken::errors::Error> for AuthError {
 impl From<validator::ValidationErrors> for AuthError {
     fn from(error: validator::ValidationErrors) -> Self {
         AuthError::ValidationError(error)
+    }
+}
+
+impl From<()> for AuthError {
+    fn from(_: ()) -> Self {
+        AuthError::UserNotFound
     }
 }

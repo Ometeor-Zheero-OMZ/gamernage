@@ -8,15 +8,13 @@
 
 use async_trait::async_trait;
 use crate::{
-    application::errors::user_error::UserError,
-    application::jwt::jwt::Claims,
-    application::types::di_type::UserRepositoryArc,
-    {app_log, error_log}
+    app_log, application::{errors::user_error::UserError, jwt::jwt::Claims, types::di_type::UserRepositoryArc}, domain::entities::user::{UserRequest, UserResponse}, error_log
 };
 
 #[async_trait]
 pub trait UserService: Send + Sync {
     async fn get_user_id(&self, user: &Claims) -> Result<i32, UserError>;
+    async fn find_user_by_id(&self, req: &UserRequest) -> Result<Option<UserResponse>, UserError>;
 }
 
 pub struct UserServiceImpl {
@@ -57,5 +55,9 @@ impl UserService for UserServiceImpl {
                 Err(UserError::UserNotFound)
             }
         }
+    }
+
+    async fn find_user_by_id(&self, req: &UserRequest) -> Result<Option<UserResponse>, UserError> {
+        self.user_repository.find_user_by_id(&req.user_id).await
     }
 }

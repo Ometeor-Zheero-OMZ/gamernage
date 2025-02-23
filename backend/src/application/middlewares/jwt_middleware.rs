@@ -51,10 +51,13 @@ where
     fn call(&self, request: ServiceRequest) -> Self::Future {
         // 認証なしでコールが可能な API パスのリスト
         let exempt_paths = vec![
-            "/api/auth/guest_login",
-            "/api/auth/signup",
-            "/api/auth/login",
-            "/api/auth/current_user"
+            "/api/v1/auth/register",
+            "/api/v1/auth/login",
+            "/api/v1/auth/logout",
+            "/api/v1/auth/user",
+            "/api/v1/auth/login-status",
+            "/api/v1/auth/healthcheck",
+            "/api/v1/tasks"
         ];
 
         let is_exempt = exempt_paths.contains(&request.path());

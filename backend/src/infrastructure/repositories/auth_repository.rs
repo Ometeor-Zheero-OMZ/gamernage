@@ -9,15 +9,10 @@
 //! `get_user_by_email`       - ユーザー検索
 
 use async_trait::async_trait;
-use bcrypt::verify;
 use tokio_postgres::NoTls;
 use bb8_postgres::{PostgresConnectionManager, bb8::Pool};
 use crate::{
-    application::jwt::jwt,
-    application::errors::auth_error::AuthError,
-    domain::repositories::auth_repository::AuthRepository,
-    domain::entities::{auth::LoginRequest, user::User},
-    {app_log, error_log}
+    application::errors::auth_error::AuthError, domain::{entities::auth::{LoginSelectResult, SignupInsertResult}, repositories::auth_repository::AuthRepository}, app_log, info_log
 };
 
 pub struct AuthRepositoryImpl {
@@ -32,198 +27,74 @@ impl AuthRepositoryImpl {
 
 #[async_trait]
 impl AuthRepository for AuthRepositoryImpl {
-    // 本番では使用しないためロジックはアーキテクトを無視する
-    async fn guest_login(
-        &self,
-        req: &LoginRequest,
-    ) -> Result<Option<User>, AuthError> {
+    async fn register_user(&self, name: &str, email: &str, password: &str) -> Result<SignupInsertResult, AuthError> {
         let conn = self.pool.get().await?;
-        
-        let rows = conn.query(
+
+        let row = conn.query_one(
+            r#"
+                INSERT INTO users (
+                    name,
+                    email,
+                    password
+                ) VALUES (
+                    $1,
+                    $2,
+                    $3
+                )
+                RETURNING *;
+            "#,
+            &[&name, &email, &password]
+        ).await?;
+
+        Ok(SignupInsertResult {
+            id: row.get("id"),
+            name: row.get("name"),
+            email: row.get("email"),
+            role: row.get("role"),
+            photo: row.get("photo"),
+            bio: row.get("bio"),
+            is_verified: row.get("is_verified"),
+        })
+    }
+
+    async fn get_user_by_email(&self, email: &str) -> Result<Option<LoginSelectResult>, AuthError> {
+        info_log!("[auth_repository] - [get_user_by_email] get_user_by_email called");
+
+        let conn = self.pool.get().await?;
+
+        let row_opt = conn.query_opt(
             r#"
                 SELECT 
-                    users.id,
-                    user_profiles.name,
-                    user_profiles.email,
-                    user_auth.password
+                    id,
+                    name,
+                    email,
+                    role,
+                    photo,
+                    bio,
+                    is_verified
                 FROM
                     users
-                INNER JOIN
-                    user_auth
-                ON
-                    user_auth.user_id = users.id
-                INNER JOIN
-                    user_profiles
-                ON
-                    user_profiles.user_id = user_auth.user_id
                 WHERE
                     email = $1;
             "#,
-            &[&req.email]
-        ).await?;
-
-        if rows.is_empty() {
-            return Ok(None);
-        }
-
-        let id: i32 = rows.get(0).unwrap().get("id");
-        let password: String = rows.get(0).unwrap().get("password");
-
-        if verify(&req.password, &password).is_err() {
-            error_log!("[auth_repository] - [guest_login] - [Authentication Failed]");
-            return Ok(None);
-        }
-
-        match jwt::create_token(&req.email, &id) {
-            Ok(token) => {
-                let user_data = User {
-                    id,
-                    name: req.name.clone(),
-                    email: req.email.clone(),
-                    token,
-                };
-                Ok(Some(user_data))
-            }
-            Err(error) => {
-                error_log!("[auth_repository] - [guest_login] - [message: error = {}]", error);
-                Err(AuthError::TokenCreationError(error))
-            }
-        }
-    }
-
-    /// 新規登録
-    /// 
-    /// 新規ユーザーをサインアップします。
-    /// ユーザー情報（名前、メールアドレス、パスワード）をデータベースに挿入します。
-    /// 
-    /// # 引数
-    /// 
-    /// * `name`            - ユーザーの名前
-    /// * `email`           - ユーザーのメールアドレス
-    /// * `hashed_password` - ハッシュ化されたパスワード
-    /// 
-    /// # 戻り値
-    /// 
-    /// `Result` を返します：
-    /// 
-    /// - `Ok(())`         - ユーザー情報の登録が成功した場合。
-    /// - `Err(AuthError)` - データベース接続やクエリエラーが発生した場合、カスタムエラーを返します。
-    async fn signup(
-        &self,
-        name: &str,
-        email: &str,
-        hashed_password: &str,
-    ) -> Result<(), AuthError> {
-        let pool = self.pool.clone();
-        let mut conn = pool.get().await.map_err(AuthError::from)?;
-        let tx = conn.transaction().await.map_err(AuthError::from)?;
-
-        let result_row = tx.query_one(
-            r#"
-                INSERT INTO users (
-                    created_at,
-                    updated_at
-                ) VALUES (
-                    CURRENT_TIMESTAMP,
-                    CURRENT_TIMESTAMP
-                )
-                RETURNING id;
-            "#,
-            &[]
-        ).await?;
-
-        let user_id: i32 = result_row.get("id");
-
-        tx.execute(
-            r#"
-                INSERT INTO user_profiles (
-                    user_id,
-                    name,
-                    email,
-                    created_at,
-                    updated_at
-                ) VALUES (
-                    $1,
-                    $2,
-                    $3,
-                    CURRENT_TIMESTAMP,
-                    CURRENT_TIMESTAMP
-                );
-            "#,
-            &[&user_id, &name, &email]
-        ).await?;
-
-        tx.execute(
-            r#"
-                INSERT INTO user_auth (
-                    user_id,
-                    password,
-                    created_at,
-                    updated_at
-                ) VALUES (
-                    $1,
-                    $2,
-                    CURRENT_TIMESTAMP,
-                    CURRENT_TIMESTAMP
-                );
-            "#,
-            &[&user_id, &hashed_password]
-        ).await?;
-
-        tx.commit().await?;
-
-        Ok(())
-    }
-
-    /// メールアドレスでユーザーを検索
-    /// 
-    /// メールアドレスを使ってユーザーを検索し、結果を返します。
-    /// 
-    /// # 引数
-    /// 
-    /// * `email` - ユーザーのメールアドレス
-    /// 
-    /// # 戻り値
-    /// 
-    /// `Result` を返します：
-    /// 
-    /// - `Ok(Some((id, name, email, password)))` - ユーザーが見つかった場合、ユーザー情報を返します。
-    /// - `Ok(None)`                              - ユーザーが見つからなかった場合。
-    /// - `Err(AuthError)`                        - データベース接続やクエリエラーが発生した場合、カスタムエラーを返します。
-    async fn get_user_by_email(&self, email: &str) -> Result<Option<(i32, String, String, String)>, AuthError> {
-        let conn = self.pool.get().await?;
-        let rows = conn.query(
-            r#"
-                SELECT 
-                    users.id,
-                    user_profiles.name,
-                    user_profiles.email,
-                    user_auth.password
-                FROM
-                    users
-                INNER JOIN
-                    user_auth
-                ON
-                    user_auth.user_id = users.id
-                INNER JOIN
-                    user_profiles
-                ON
-                    user_profiles.user_id = user_auth.user_id
-                WHERE
-                    user_profiles.email = $1;
-            "#,
             &[&email]
-        ).await?;
+        ).await;
 
-        if rows.is_empty() {
-            return Ok(None);
+        match row_opt {
+            Ok(Some(row)) => {
+                Ok(Some(LoginSelectResult {
+                    id: row.get("id"),
+                    name: row.get("name"),
+                    email: row.get("email"),
+                    password: row.get("password"),
+                    role: row.get("role"),
+                    photo: row.get("photo"),
+                    bio: row.get("bio"),
+                    is_verified: row.get("is_verified"),
+                }))
+            },
+            Ok(None) => Ok(None),
+            Err(err) => Err(AuthError::DatabaseError(err.into())),
         }
-
-        let id: i32 = rows.get(0).unwrap().get("id");
-        let name: String = rows.get(0).unwrap().get("name");
-        let email: String = rows.get(0).unwrap().get("email");
-        let password: String = rows.get(0).unwrap().get("password");
-
-        Ok(Some((id, name, email, password)))
     }
 }

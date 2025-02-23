@@ -1,16 +1,12 @@
 "use client";
 
+import { useToast } from "@/hooks/use-toast";
+import { AuthContextType, LoginRequest, SignupRequest, User } from "@/types";
 import {
   DYNAMIC_ERROR_MESSAGES,
   ERROR_MESSAGES,
   PG_ERROR_MESSAGES,
-} from "@/constants/message";
-import {
-  AuthContextType,
-  LoginRequest,
-  SignupRequest,
-  User,
-} from "@/types/type";
+} from "@/utils/message";
 import axios from "axios";
 import {
   FC,
@@ -20,7 +16,6 @@ import {
   useEffect,
   ReactNode,
 } from "react";
-import { useToast } from "@/hooks/use-toast";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
